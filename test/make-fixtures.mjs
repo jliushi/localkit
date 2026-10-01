@@ -35,3 +35,10 @@ await makePdf('a.pdf', 3, 'A');
 await makePdf('b.pdf', 2, 'B');
 await makePdf('long.pdf', 7, 'L');
 console.log(fs.readdirSync(FIX).join(', '));
+
+// Video/audio and heavy fixtures (need ffmpeg on PATH):
+//   ffmpeg -f lavfi -i "testsrc2=s=1920x1080:rate=30,noise=alls=12:allf=t" -f lavfi -i "sine=frequency=440:sample_rate=48000" -t 30 -c:v libx264 -preset veryfast -b:v 8M -pix_fmt yuv420p -c:a aac -b:a 128k phone-1080p.mp4
+//   ffmpeg -f lavfi -i "testsrc2=s=3000x4000,noise=alls=25:allf=t" -frames:v 1 -q:v 2 bigphoto.jpg
+//   ffmpeg -f lavfi -i "testsrc2=s=1600x1200" -frames:v 1 bigshot.png
+//   clip-en.mp4 / clip-zh.mp4: testsrc + Windows TTS speech (speech-en.wav / speech-zh.wav); clip.mkv/.mov = stream copies; clip.avi = mpeg4 + mp3
+//   heavy.pdf: 2 pages with bigphoto.jpg + 1 page with bigshot.png (pdf-lib)

@@ -1,5 +1,5 @@
 // Shared PDF helpers: pdf.js for rendering, pdf-lib for writing. Both load on demand.
-import { LK, el } from './lib.js';
+import { LK, el, icon } from './lib.js';
 
 let pdfjsPromise = null;
 export function pdfjs() {
@@ -12,23 +12,21 @@ export function pdfjs() {
 
 export const pdflib = () => import('pdf-lib');
 
-/** Releases a pdf.js document (the API moved between versions). */
-export function closeDoc(doc) {
-  if (!doc) return;
-  if (typeof doc.destroy === 'function') doc.destroy();
-  else doc.loadingTask?.destroy?.();
-}
-
 export class PdfError extends Error {}
+
+const MSG = {
+  en: { pw: 'This PDF is password-protected. Open it with its password and save an unprotected copy first.', bad: 'This file could not be read as a PDF. It may be damaged.' },
+  zh: { pw: '这个 PDF 有密码保护。请先用密码打开，另存为无密码的副本后再试。', bad: '无法把这个文件读取为 PDF，它可能已损坏。' },
+};
+const msg = (k) => (MSG[LK.lang] || MSG.en)[k];
 
 /** Opens a PDF for rendering. `bytes` is copied because pdf.js transfers the buffer to its worker. */
 export async function openForRender(bytes) {
   const lib = await pdfjs();
   try {
-    return await lib.getDocument({ data: bytes.slice(0), isEvalSupported: false }).promise;
+    return await lib.getDocument({ data: bytes.slice(0), isEvalSupported: false, standardFontDataUrl: `${LK.base}/vendor/pdfjs/standard_fonts/` }).promise;
   } catch (e) {
-    if (e?.name === 'PasswordException') throw new PdfError(LK.lang === 'zh' ? '这个 PDF 有密码保护，请先用密码打开并另存为无密码版本。' : 'This PDF is password-protected. Open it with its password and save an unprotected copy first.');
-    throw new PdfError(LK.lang === 'zh' ? '无法读取这个 PDF 文件，它可能已损坏。' : 'This file could not be read as a PDF. It may be damaged.');
+    throw new PdfError(e?.name === 'PasswordException' ? msg('pw') : msg('bad'));
   }
 }
 
@@ -36,39 +34,44 @@ export async function openForRender(bytes) {
 export async function openForEdit(bytes) {
   const { PDFDocument } = await pdflib();
   try {
-    return await PDFDocument.load(bytes, { ignoreEncryption: false, updateMetadata: false });
+    return await PDFDocument.load(bytes, { updateMetadata: false });
   } catch (e) {
-    if (/encrypt/i.test(e?.message || '')) throw new PdfError(LK.lang === 'zh' ? '这个 PDF 已加密，无法编辑。请先用密码打开并另存为无密码版本。' : 'This PDF is encrypted and cannot be edited. Open it with its password and save an unprotected copy first.');
-    throw new PdfError(LK.lang === 'zh' ? '无法读取这个 PDF 文件，它可能已损坏。' : 'This file could not be read as a PDF. It may be damaged.');
+    throw new PdfError(/encrypt/i.test(e?.message || '') ? msg('pw') : msg('bad'));
   }
 }
 
-/** Renders one page into a new canvas whose longest side is about `size` CSS pixels. */
+export function closeDoc(doc) {
+  if (!doc) return;
+  if (typeof doc.destroy === 'function') doc.destroy();
+  else doc.loadingTask?.destroy?.();
+}
+
+/** Renders one page into a canvas whose longest side is about `size` CSS pixels. */
 export async function renderPage(doc, pageNumber, size = 160, extraRotation = 0) {
   const page = await doc.getPage(pageNumber);
-  const base = page.getViewport({ scale: 1, rotation: (page.rotate + extraRotation) % 360 });
+  const rot = (page.rotate + extraRotation) % 360;
+  const base = page.getViewport({ scale: 1, rotation: rot });
   const scale = size / Math.max(base.width, base.height);
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const vp = page.getViewport({ scale: scale * dpr, rotation: (page.rotate + extraRotation) % 360 });
+  const vp = page.getViewport({ scale: scale * dpr, rotation: rot });
   const canvas = el('canvas', { width: Math.ceil(vp.width), height: Math.ceil(vp.height) });
   canvas.style.width = `${Math.ceil(vp.width / dpr)}px`;
-  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp, canvas }).promise;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  await page.render({ canvasContext: ctx, viewport: vp, canvas }).promise;
   page.cleanup();
   return canvas;
 }
 
 export const readBytes = async (file) => new Uint8Array(await file.arrayBuffer());
-
 export const pdfBlob = (bytes) => new Blob([bytes], { type: 'application/pdf' });
 
-/**
- * Parses page ranges like "1-3, 5, 8-" into arrays of 1-based page numbers.
- * Returns [[1,2,3],[5],[8,9,10]] for a 10-page document; throws on invalid input.
- */
+/** "1-3, 5, 8-" → [[1,2,3],[5],[8..n]]; throws PdfError(part) on invalid input. */
 export function parseRanges(text, pageCount) {
   const groups = [];
   for (const part of text.split(/[,，;；\s]+/).filter(Boolean)) {
-    const m = part.match(/^(\d*)\s*[-–~]\s*(\d*)$/) || part.match(/^(\d+)$/);
+    const m = part.match(/^(\d*)\s*[-–~～]\s*(\d*)$/) || part.match(/^(\d+)$/);
     if (!m) throw new PdfError(part);
     let a, b;
     if (m.length === 2) a = b = Number(m[1]);
@@ -80,25 +83,26 @@ export function parseRanges(text, pageCount) {
   return groups;
 }
 
-/** Makes children of `list` reorderable by dragging; calls onMove(from, to). Works with mouse and touch. */
+/** Drag-to-reorder for the direct children of `list` that have draggable="true". */
 export function sortable(list, onMove) {
-  let dragIndex = -1;
+  let from = -1;
   list.addEventListener('dragstart', (e) => {
-    const item = e.target.closest('[draggable="true"]');
-    if (!item) return;
-    dragIndex = [...list.children].indexOf(item);
+    const item = e.target.closest?.('[draggable="true"]');
+    if (!item || item.parentElement !== list) return;
+    from = [...list.children].indexOf(item);
     item.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(from));
   });
-  list.addEventListener('dragend', (e) => e.target.closest?.('[draggable="true"]')?.classList.remove('dragging'));
-  list.addEventListener('dragover', (e) => { if (dragIndex >= 0) e.preventDefault(); });
+  list.addEventListener('dragend', (e) => { e.target.closest?.('[draggable="true"]')?.classList.remove('dragging'); });
+  list.addEventListener('dragover', (e) => { if (from >= 0) e.preventDefault(); });
   list.addEventListener('drop', (e) => {
-    if (dragIndex < 0) return;
+    if (from < 0) return;
     e.preventDefault();
     const target = e.target.closest('[draggable="true"]');
-    const to = target ? [...list.children].indexOf(target) : list.children.length - 1;
-    if (to >= 0 && to !== dragIndex) onMove(dragIndex, to);
-    dragIndex = -1;
+    const to = target && target.parentElement === list ? [...list.children].indexOf(target) : list.children.length - 1;
+    if (to >= 0 && to !== from) onMove(from, to);
+    from = -1;
   });
 }
 
@@ -106,3 +110,9 @@ export function move(arr, from, to) {
   const [x] = arr.splice(from, 1);
   arr.splice(to, 0, x);
 }
+
+export const SAMPLE_PDF = () => ({ url: `${LK.base}/assets/samples/sample.pdf`, name: 'sample.pdf', type: 'application/pdf' });
+
+/** Small icon button used on page thumbnails. */
+export const tbtn = (name, label, onclick, disabled) => el('button', { type: 'button', title: label, 'aria-label': label, onclick, disabled: !!disabled }, icon(name));
+

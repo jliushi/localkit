@@ -1,9 +1,9 @@
-import { $, t, LK, el, download, status } from './lib.js';
+import { $, t, LK, el, download, alertBox } from './lib.js';
 
 const KEY = `lk-resume-${LK.lang}`;
 const form = $('#rb-form');
 const paper = $('#rb-paper');
-const st = status($('#rb-status'));
+const st = { clear: () => $('#rb-status').replaceChildren(), error: (e) => $('#rb-status').replaceChildren(alertBox(e.message || String(e))) };
 const LISTS = {
   exp: { box: '#rb-exp', fields: [['company', 'company'], ['role', 'role'], ['start', 'start'], ['end', 'end', 'endPh'], ['bullets', 'bullets', null, true]] },
   edu: { box: '#rb-edu', fields: [['school', 'school'], ['degree', 'degree'], ['start', 'start'], ['end', 'end']] },

@@ -32,6 +32,26 @@ async function load(model, device, post) {
   return pipe;
 }
 
+/**
+ * Whisper picks the language from the first token it predicts after <|startoftranscript|>.
+ * transformers.js would otherwise silently assume English, so detect it from the first 30 s.
+ */
+async function detectLanguage(pipe, audio) {
+  const { input_features } = await pipe.processor(audio.subarray(0, 30 * 16000));
+  const model = pipe.model;
+  const original = model._retrieve_init_tokens;
+  model._retrieve_init_tokens = (gc) => [gc.decoder_start_token_id];
+  try {
+    const out = await model.generate({ inputs: input_features, max_new_tokens: 1 });
+    const seq = (out.tolist ? out.tolist() : out.sequences.tolist())[0];
+    const token = Number(seq[seq.length - 1]);
+    const hit = Object.entries(model.generation_config.lang_to_id || {}).find(([, id]) => Number(id) === token);
+    return hit ? hit[0].replace(/[<|>]/g, '') : null;
+  } finally {
+    model._retrieve_init_tokens = original;
+  }
+}
+
 self.onmessage = async ({ data }) => {
   const post = (m) => self.postMessage(m);
   if (data.type !== 'run') return;
@@ -49,6 +69,11 @@ self.onmessage = async ({ data }) => {
     }
     post({ type: 'ready', device });
     const audio = data.audio;
+    let language = data.language || null;
+    if (!language) {
+      language = await detectLanguage(pipe, audio).catch(() => null);
+      post({ type: 'language', language });
+    }
     const chunkSeconds = 30;
     const seconds = audio.length / 16000;
     // The pipeline slides a 30 s window forward by 20 s (30 − 2 × 5 s stride).
@@ -60,14 +85,14 @@ self.onmessage = async ({ data }) => {
       on_finalize: () => { done++; post({ type: 'progress', value: Math.min(0.99, done / total) }); },
     });
     const out = await pipe(audio, {
-      language: data.language || null,
+      language,
       task: data.task,
       chunk_length_s: chunkSeconds,
       stride_length_s: 5,
       return_timestamps: true,
       streamer,
     });
-    post({ type: 'result', chunks: out.chunks || [{ text: out.text, timestamp: [0, audio.length / 16000] }], device });
+    post({ type: 'result', chunks: out.chunks || [{ text: out.text, timestamp: [0, audio.length / 16000] }], device, language });
   } catch (e) {
     post({ type: 'error', message: e?.message || String(e) });
   }

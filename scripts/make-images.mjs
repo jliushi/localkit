@@ -1,32 +1,47 @@
-// Renders icon-180.png and the social preview images (og-en.png, og-zh.png) into src/assets.
+// Renders icon-180.png and the social preview images in src/assets/og/ (one per tool and language).
 // Dev-only (needs the puppeteer devDependency):  node scripts/make-images.mjs
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer';
+import { COMMON } from '../src/common-strings.mjs';
 
-const ASSETS = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'assets');
-const svg = `data:image/svg+xml;base64,${fs.readFileSync(path.join(ASSETS, 'icon.svg')).toString('base64')}`;
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const ASSETS = path.join(ROOT, 'src', 'assets');
+const OG = path.join(ASSETS, 'og');
+fs.mkdirSync(OG, { recursive: true });
+const svg64 = (file) => `data:image/svg+xml;base64,${fs.readFileSync(file).toString('base64')}`;
+const appIcon = svg64(path.join(ASSETS, 'icon.svg'));
+const lucide = (name) => fs.readFileSync(path.join(ROOT, 'node_modules/lucide-static/icons', `${name}.svg`), 'utf8').replace(/<!--.*?-->/s, '').replace(/width="24"\s*height="24"/, 'width="120" height="120"').replace('stroke="currentColor"', 'stroke="#fff"');
+
+const tools = [];
+for (const f of fs.readdirSync(path.join(ROOT, 'src/tools'))) tools.push((await import(pathToFileURL(path.join(ROOT, 'src/tools', f)).href)).default);
+
 const browser = await puppeteer.launch();
 const page = await browser.newPage();
-
 await page.setViewport({ width: 180, height: 180 });
-await page.setContent(`<body style="margin:0"><img src="${svg}" width="180" height="180"></body>`);
+await page.setContent(`<body style="margin:0"><img src="${appIcon}" width="180" height="180"></body>`);
 await page.screenshot({ path: path.join(ASSETS, 'icon-180.png'), omitBackground: true });
 
-const og = {
-  en: ['LocalKit', 'Free online tools that never upload your files', ['AI subtitles', 'PDF tools', 'Image converter', 'Video tools', 'Resume builder']],
-  zh: ['LocalKit 本地工具箱', '文件不上传的免费在线工具', ['AI 字幕', 'PDF 工具', '图片转换', '视频工具', '简历制作']],
-};
 await page.setViewport({ width: 1200, height: 630 });
-for (const [lang, [name, line, chips]] of Object.entries(og)) {
-  await page.setContent(`<body style="margin:0;width:1200px;height:630px;box-sizing:border-box;padding:70px 90px;display:flex;flex-direction:column;justify-content:center;
-    background:linear-gradient(135deg,#14b8a6,#0f766e);color:#fff;font-family:'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
-    <div style="display:flex;align-items:center;gap:22px"><img src="${svg}" width="92" height="92" style="filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))"><span style="font-size:46px;font-weight:700">${name}</span></div>
-    <div style="font-size:${lang === 'zh' ? 70 : 62}px;font-weight:800;line-height:1.15;margin:38px 0 34px;max-width:1000px">${line}</div>
-    <div style="display:flex;gap:14px;flex-wrap:wrap">${chips.map((c) => `<span style="background:rgba(255,255,255,.18);border-radius:999px;padding:8px 20px;font-size:28px">${c}</span>`).join('')}</div>
-  </body>`);
-  await page.screenshot({ path: path.join(ASSETS, `og-${lang}.png`) });
+const card = (lang, title, line, color, iconSvg) => `<body style="margin:0;width:1200px;height:630px;box-sizing:border-box;padding:70px 84px;display:flex;flex-direction:column;justify-content:space-between;
+  background:radial-gradient(circle at 85% 20%, ${color}55, transparent 55%), linear-gradient(135deg,#0f172a,#111827);color:#fff;font-family:'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <div style="display:flex;align-items:center;gap:16px;font-size:34px;font-weight:700;opacity:.92"><img src="${appIcon}" width="58" height="58">${COMMON[lang].siteName}</div>
+  <div style="display:flex;align-items:center;gap:46px">
+    ${iconSvg ? `<div style="flex:0 0 auto;width:190px;height:190px;border-radius:48px;background:${color};display:grid;place-items:center;box-shadow:0 20px 50px ${color}66">${iconSvg}</div>` : ''}
+    <div><div style="font-size:${lang === 'zh' ? 76 : 70}px;font-weight:800;line-height:1.08;letter-spacing:-1px">${title}</div>
+    <div style="font-size:${lang === 'zh' ? 34 : 31}px;margin-top:22px;color:#cbd5e1;max-width:760px;line-height:1.35">${line}</div></div>
+  </div>
+  <div style="display:flex;gap:14px;font-size:26px;color:#e2e8f0">${COMMON[lang].trust.slice(0, 3).map((x) => `<span style="background:rgba(255,255,255,.1);border-radius:999px;padding:8px 20px">✓ ${x}</span>`).join('')}</div>
+</body>`;
+for (const lang of ['en', 'zh']) {
+  await page.setContent(card(lang, COMMON[lang].homeH1, COMMON[lang].homeLead.split(/(?<=[.。])/)[0], '#14b8a6', null));
+  await page.screenshot({ path: path.join(OG, `home-${lang}.jpg`), type: 'jpeg', quality: 86 });
+  for (const t of tools) {
+    const s = t.strings[lang];
+    await page.setContent(card(lang, s.name, s.short, t.color, lucide(t.iconName)));
+    await page.screenshot({ path: path.join(OG, `${t.id}-${lang}.jpg`), type: 'jpeg', quality: 86 });
+  }
 }
 await browser.close();
-console.log('images written');
+console.log(`${tools.length * 2 + 2} images`);

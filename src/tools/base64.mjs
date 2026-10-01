@@ -2,77 +2,87 @@ import { html } from '../../build/html.mjs';
 
 export default {
   id: 'base64',
-  category: 'text',
-  icon: 'B64',
+  category: 'docs',
+  iconName: 'binary',
   color: '#7c3aed',
+  related: ['compare-text', 'convert-image', 'compress-image'],
+  appCategory: 'DeveloperApplication',
   strings: {
     en: {
-      name: 'Base64 Encode / Decode',
-      title: 'Base64 Encode & Decode Online — Text and Files, Free',
-      desc: 'Encode text or files to Base64 and decode Base64 back to text or a file. Supports UTF-8, URL-safe Base64 and data URIs. Runs in your browser — nothing is uploaded.',
+      name: 'Base64 Encode & Decode',
+      short: 'Convert text or files to Base64 and back — live, both directions.',
+      keywords: ['base64 decoder', 'base64 encoder', 'base64 to image', 'image to base64', 'data uri', 'base64 to file'],
+      title: 'Base64 Encode & Decode Online — Text, Files & Images (Live, Private)',
+      desc: 'Encode text or files to Base64 and decode Base64 back to text, images or downloadable files — live as you type, in both directions. UTF-8, URL-safe Base64 and data URIs. Free and private: runs in your browser.',
       h1: 'Base64 encoder and decoder',
-      lead: 'Convert text or any file to Base64, or decode Base64 back to text or a downloadable file. Full UTF-8 support (Chinese, emoji), URL-safe mode and data URIs.',
-      steps: [
-        'Type or paste text in the left box, or drop a file on the file area.',
-        'Choose Encode or Decode. The result appears instantly.',
-        'Copy the result, or download it as a file when decoding binary data.',
+      sub: 'Type in either box and the other updates instantly: text becomes Base64, Base64 becomes text. Drop a file to get its Base64 or data URI, or paste Base64 to preview and download the file inside it.',
+      features: [
+        ['arrow-left-right', 'Live in both directions', 'Edit the text or the Base64 — the other side updates as you type. Full UTF-8 support for Chinese and emoji.'],
+        ['file-code', 'Files and images', 'Drop any file to encode it, or paste Base64 / a data URI to preview images and download the decoded file.'],
+        ['link', 'URL-safe and data URIs', 'Switch to URL-safe Base64 (- and _) or wrap the result as a data: URI for HTML and CSS.'],
+      ],
+      howToTitle: 'How to encode or decode Base64',
+      steps: ['To encode, type or paste text in the left box (or drop a file on it).', 'To decode, paste Base64 in the right box — text appears on the left; binary data can be previewed and downloaded.', 'Use Copy to copy either side.'],
+      guide: [
+        ['What is Base64?', 'Base64 writes binary data with 64 safe characters (A–Z, a–z, 0–9, + and /), so it can travel inside text: JSON, e-mail, URLs, HTML and CSS. It makes data about 33% larger and is not encryption — anyone can decode it.'],
+        ['Common uses', { list: ['Embedding small images in HTML or CSS as data: URIs.', 'Reading the payload of JWT tokens and API responses (use URL-safe mode).', 'Sending files inside JSON or configuration files.', 'Decoding e-mail attachments or Basic-Auth headers.'] }],
       ],
       faq: [
-        ['What is Base64?', 'Base64 represents binary data with 64 printable characters (A–Z, a–z, 0–9, + and /). It is used to embed images in HTML or CSS, send attachments in e-mail, and put binary data in JSON or URLs.'],
-        ['Does Base64 encrypt my data?', 'No. Base64 is an encoding, not encryption — anyone can decode it. Do not use it to protect secrets.'],
-        ['What is URL-safe Base64?', 'A variant that uses - and _ instead of + and / and usually drops the = padding, so the text can be used in URLs and file names. Turn on "URL-safe" to produce it; decoding accepts both variants automatically.'],
-        ['Is my file uploaded?', 'No. Encoding and decoding happen in your browser with JavaScript; the file never leaves your device.'],
+        ['How do I decode Base64 to text?', 'Paste the Base64 into the right box; the decoded text appears on the left immediately.'],
+        ['How do I convert Base64 to an image?', 'Paste the Base64 or data:image URI in the right box. LocalKit detects the image, shows a preview and lets you download it.'],
+        ['How do I convert an image to Base64?', 'Drop the image on the left box. Turn on "Data URI" to get a string you can use directly in <img src="…">.'],
+        ['Is Base64 encryption?', 'No — it is only an encoding. Never use it to protect passwords or secrets.'],
+        ['Is my data sent anywhere?', 'No. Encoding and decoding happen in your browser.'],
       ],
       ui: {
-        input: 'Input', output: 'Output', encode: 'Encode →', decode: '← Decode', urlSafe: 'URL-safe', dataUri: 'As data URI',
-        fileArea: 'Or drop a file to encode it', fileEncoded: 'Encoded $1 ($2)', invalid: 'This is not valid Base64.',
-        decodedBinary: 'The decoded data is binary ($1). Download it as a file:', saveAs: 'Download file', placeholderIn: 'Text or Base64…',
-        swap: 'Swap', chars: '$1 characters',
+        text: 'Text', b64: 'Base64', phText: 'Type or paste text, or drop a file here…', phB64: 'Paste Base64 or a data: URI…', urlSafe: 'URL-safe', dataUri: 'Data URI', copy: 'Copy', clear: 'Clear',
+        invalid: 'This is not valid Base64.', binary: 'Binary data: $1 · $2', download: 'Download file', fileEncoded: '$1 · $2 encoded', chars: '$1 characters', bytes: '$1 bytes',
       },
     },
     zh: {
-      name: 'Base64 编码 / 解码',
-      title: 'Base64 在线编码解码 — 文本和文件互转，免费',
-      desc: '把文本或文件编码为 Base64，或把 Base64 解码回文本或文件。支持 UTF-8 中文、URL 安全 Base64 和 data URI。在浏览器本地运行，不上传任何内容。',
+      name: 'Base64 编码解码',
+      short: '文本或文件与 Base64 互转 —— 双向实时转换。',
+      keywords: ['base64 解码', 'base64 编码', 'base64 转图片', '图片转 base64', 'data uri', 'base64 转文件'],
+      title: 'Base64 在线编码解码 — 文本、文件、图片互转（实时、私密）',
+      desc: '把文本或文件编码为 Base64，或把 Base64 解码回文本、图片或可下载的文件 —— 输入时双向实时转换。支持 UTF-8、URL 安全 Base64 和 data URI。免费、私密，在浏览器中运行。',
       h1: 'Base64 编码 / 解码工具',
-      lead: '把文本或任意文件转换成 Base64，或把 Base64 还原为文本或可下载的文件。完整支持 UTF-8（中文、表情符号），支持 URL 安全模式和 data URI。',
-      steps: [
-        '在左侧输入框输入或粘贴文本，或把文件拖到文件区域。',
-        '点击「编码」或「解码」，结果立即显示。',
-        '复制结果；如果解码出的是二进制数据，可以直接下载为文件。',
+      sub: '在任意一个框里输入，另一个会立即更新：文本变成 Base64，Base64 变回文本。拖入文件可得到它的 Base64 或 data URI，粘贴 Base64 可以预览并下载其中的文件。',
+      features: [
+        ['arrow-left-right', '双向实时转换', '编辑文本或 Base64，另一边都会随输入更新。完整支持中文和表情符号（UTF-8）。'],
+        ['file-code', '文件和图片', '拖入任意文件即可编码；粘贴 Base64 或 data URI 可以预览图片、下载解码后的文件。'],
+        ['link', 'URL 安全与 data URI', '可切换为 URL 安全的 Base64（- 和 _），或把结果包装成用于 HTML、CSS 的 data: URI。'],
+      ],
+      howToTitle: '如何进行 Base64 编码和解码',
+      steps: ['编码：在左边的框里输入或粘贴文本（也可以拖入文件）。', '解码：在右边的框里粘贴 Base64 —— 左边显示文本；二进制数据可以预览和下载。', '用「复制」按钮复制任意一边。'],
+      guide: [
+        ['什么是 Base64？', 'Base64 用 64 个安全字符（A–Z、a–z、0–9、+ 和 /）表示二进制数据，让它可以放进文本里传输：JSON、邮件、网址、HTML 和 CSS。数据会变大约 33%，而且不是加密 —— 任何人都能解码。'],
+        ['常见用途', { list: ['把小图片作为 data: URI 嵌入 HTML 或 CSS。', '查看 JWT 令牌和 API 返回数据的内容（使用 URL 安全模式）。', '在 JSON 或配置文件中传递文件。', '解码邮件附件或 Basic-Auth 请求头。'] }],
       ],
       faq: [
-        ['什么是 Base64？', 'Base64 用 64 个可打印字符（A–Z、a–z、0–9、+ 和 /）表示二进制数据，常用于在 HTML/CSS 中内嵌图片、电子邮件附件，以及在 JSON 或 URL 中传递二进制数据。'],
-        ['Base64 能加密数据吗？', '不能。Base64 只是编码，不是加密，任何人都能解码，不要用它保护敏感信息。'],
-        ['什么是 URL 安全的 Base64？', '它用 - 和 _ 代替 + 和 /，并通常去掉末尾的 = 填充，因此可以直接放进网址和文件名。勾选「URL 安全」即可生成；解码时两种格式都能自动识别。'],
-        ['文件会被上传吗？', '不会。编码和解码都在你的浏览器中用 JavaScript 完成，文件不会离开你的设备。'],
+        ['怎么把 Base64 解码成文本？', '把 Base64 粘贴到右边的框里，解码后的文本会立即出现在左边。'],
+        ['怎么把 Base64 转成图片？', '把 Base64 或 data:image URI 粘贴到右边。LocalKit 会识别出图片，显示预览并提供下载。'],
+        ['怎么把图片转成 Base64？', '把图片拖到左边的框里。打开「Data URI」可以得到能直接用于 <img src="…"> 的字符串。'],
+        ['Base64 是加密吗？', '不是，它只是一种编码。千万不要用它保护密码或机密信息。'],
+        ['数据会被发送出去吗？', '不会。编码和解码都在你的浏览器中完成。'],
       ],
       ui: {
-        input: '输入', output: '输出', encode: '编码 →', decode: '← 解码', urlSafe: 'URL 安全', dataUri: '输出为 data URI',
-        fileArea: '或者拖入文件进行编码', fileEncoded: '已编码 $1（$2）', invalid: '这不是有效的 Base64。',
-        decodedBinary: '解码结果是二进制数据（$1），可以下载为文件：', saveAs: '下载文件', placeholderIn: '文本或 Base64…',
-        swap: '交换', chars: '$1 个字符',
+        text: '文本', b64: 'Base64', phText: '输入或粘贴文本，也可以把文件拖到这里…', phB64: '粘贴 Base64 或 data: URI…', urlSafe: 'URL 安全', dataUri: 'Data URI', copy: '复制', clear: '清空',
+        invalid: '这不是有效的 Base64。', binary: '二进制数据：$1 · $2', download: '下载文件', fileEncoded: '已编码 $1 · $2', chars: '$1 个字符', bytes: '$1 字节',
       },
     },
   },
-  ui: (s, c) => html`
-<div class="b64">
+  ui: (s) => html`
+<div class="actions" style="margin-bottom:12px"><label class="check"><input type="checkbox" id="b6-url"> ${s.urlSafe}</label><label class="check"><input type="checkbox" id="b6-uri"> ${s.dataUri}</label><span style="flex:1"></span><button class="btn ghost sm" id="b6-clear">${s.clear}</button></div>
+<div class="split2">
   <div class="pane">
-    <label for="b64-in">${s.input}</label>
-    <textarea id="b64-in" rows="10" spellcheck="false" placeholder="${s.placeholderIn}"></textarea>
-    <div class="dropzone small" id="b64-drop">${s.fileArea}</div>
-  </div>
-  <div class="mid">
-    <button class="btn" id="b64-enc">${s.encode}</button>
-    <button class="btn secondary" id="b64-dec">${s.decode}</button>
-    <label class="check"><input type="checkbox" id="b64-url"> ${s.urlSafe}</label>
-    <label class="check"><input type="checkbox" id="b64-uri"> ${s.dataUri}</label>
+    <div class="pane-head"><span class="field-label">${s.text}</span><span class="muted small" id="b6-tc"></span><button class="btn ghost sm" id="b6-copyt">${s.copy}</button></div>
+    <textarea id="b6-text" rows="12" spellcheck="false" placeholder="${s.phText}"></textarea>
+    <div id="b6-file"></div>
   </div>
   <div class="pane">
-    <label for="b64-out">${s.output}</label>
-    <textarea id="b64-out" rows="10" spellcheck="false" readonly></textarea>
-    <div class="row"><button class="btn ghost" id="b64-copy">${c.copy}</button><button class="btn ghost" id="b64-swap">${s.swap}</button><span class="muted small" id="b64-count"></span></div>
+    <div class="pane-head"><span class="field-label">${s.b64}</span><span class="muted small" id="b6-bc"></span><button class="btn ghost sm" id="b6-copyb">${s.copy}</button></div>
+    <textarea id="b6-b64" rows="12" spellcheck="false" placeholder="${s.phB64}"></textarea>
+    <div id="b6-bin"></div>
   </div>
-</div>
-<div class="status" id="b64-status" hidden></div>`,
+</div>`,
 };

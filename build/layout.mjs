@@ -1,17 +1,28 @@
 import { url, absUrl, REPO_URL } from '../site.config.mjs';
 import { COMMON } from '../src/common-strings.mjs';
 import { html, raw, jsonScript } from './html.mjs';
+import { icon } from './icons.mjs';
+
+export const CATEGORY_ORDER = ['video', 'pdf', 'image', 'docs'];
+export const CATEGORY_ICON = { video: 'clapperboard', pdf: 'file-text', image: 'image', docs: 'files' };
+
+/** Tools grouped by category, for the menu and the footer directory. */
+function directory(tools, lang) {
+  return CATEGORY_ORDER.map((cat) => [cat, tools.filter((t) => t.category === cat)]).filter(([, ts]) => ts.length)
+    .map(([cat, ts]) => ({ cat, label: COMMON[lang].categories[cat], tools: ts.map((t) => ({ id: t.id, name: t.strings[lang].name, iconName: t.iconName, color: t.color })) }));
+}
 
 /**
- * opts: { lang, path (without the /en or /zh prefix, e.g. "/base64/"), title, description, body,
- *         jsonLd?, script? (bundle name), clientData?, noindex?, v (asset version) }
+ * opts: { lang, path (e.g. "/compress-video/"), title, description, body, tools, v,
+ *         jsonLd?, script?, clientData?, noindex?, ogImage? }
  */
 export function layout(opts) {
-  const { lang, path, v } = opts;
+  const { lang, path, v, tools } = opts;
   const c = COMMON[lang];
-  const other = lang === 'en' ? 'zh' : 'en';
+  const other = c.otherLangCode;
   const self = `/${lang}${path}`;
-  const ld = opts.jsonLd ? jsonScript(opts.jsonLd) : null;
+  const dir = directory(tools, lang);
+  const og = opts.ogImage || `/assets/og/home-${lang}.jpg`;
   return `<!doctype html>
 ${html`<html lang="${lang === 'zh' ? 'zh-CN' : 'en'}">
 <head>
@@ -27,24 +38,31 @@ ${opts.noindex ? raw('<meta name="robots" content="noindex">') : html`<link rel=
 <meta name="theme-color" content="#0f766e">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${c.siteName}">
-<meta property="og:title" content="${opts.title}">
+<meta property="og:locale" content="${lang === 'zh' ? 'zh_CN' : 'en_US'}">
+<meta property="og:title" content="${opts.ogTitle || opts.title}">
 <meta property="og:description" content="${opts.description}">
 <meta property="og:url" content="${absUrl(self)}">
-<meta property="og:image" content="${absUrl(`/assets/og-${lang}.png`)}">
+<meta property="og:image" content="${absUrl(og)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="${url('/assets/icon.svg')}" type="image/svg+xml">
 <link rel="apple-touch-icon" href="${url('/assets/icon-180.png')}">
 <link rel="stylesheet" href="${url(`/assets/style.css?v=${v}`)}">
-${ld ? html`<script type="application/ld+json">${ld}</script>` : ''}
+${opts.jsonLd ? html`<script type="application/ld+json">${jsonScript(opts.jsonLd)}</script>` : ''}
 </head>
 <body>
 <header class="top">
   <div class="wrap top-inner">
-    <a class="brand" href="${url(`/${lang}/`)}"><img src="${url('/assets/icon.svg')}" width="28" height="28" alt=""><span>${c.siteName}</span></a>
-    <span class="badge-privacy">🔒 ${c.privacyBadge}</span>
-    <nav class="nav">
-      <a href="${url(`/${lang}/`)}">${c.allTools}</a>
-      <a class="lang" href="${url(`/${other}${path}`)}" hreflang="${other === 'zh' ? 'zh-CN' : 'en'}" lang="${other === 'zh' ? 'zh-CN' : 'en'}" data-lang="${other}">${c.otherLang}</a>
+    <a class="brand" href="${url(`/${lang}/`)}"><img src="${url('/assets/icon.svg')}" width="30" height="30" alt="">${c.siteName}</a>
+    <nav class="nav" aria-label="${c.allTools}">
+      <details class="menu">
+        <summary>${icon('layout-grid')}<span>${c.allTools}</span></summary>
+        <div class="menu-panel">
+          ${dir.map((g) => html`<div><h4>${g.label}</h4>${g.tools.map((t) => html`<a href="${url(`/${lang}/${t.id}/`)}" style="--tc:${t.color}">${icon(t.iconName)}${t.name}</a>`)}</div>`)}
+        </div>
+      </details>
+      <a class="lang" href="${url(`/${other}${path}`)}" hreflang="${other === 'zh' ? 'zh-CN' : 'en'}" lang="${other === 'zh' ? 'zh-CN' : 'en'}" data-lang="${other}">${icon('languages')}<span>${c.otherLang}</span></a>
     </nav>
   </div>
 </header>
@@ -53,8 +71,13 @@ ${opts.body}
 </main>
 <footer class="foot">
   <div class="wrap foot-inner">
-    <p>${c.footer}</p>
-    <p class="foot-links"><a href="${url(`/${lang}/privacy/`)}">${c.privacy}</a><a href="${REPO_URL}">${c.source}</a><a href="${url(`/${other}${path}`)}" data-lang="${other}">${c.otherLang}</a></p>
+    <div class="foot-dir">
+      ${dir.map((g) => html`<div><h4>${g.label}</h4>${g.tools.map((t) => html`<a href="${url(`/${lang}/${t.id}/`)}">${t.name}</a>`)}</div>`)}
+    </div>
+    <div class="foot-bottom">
+      <span>${c.footerNote}</span>
+      <nav><a href="${url(`/${lang}/about/`)}">${c.about}</a><a href="${url(`/${lang}/privacy/`)}">${c.privacy}</a><a href="${REPO_URL}">${c.source}</a><a href="${url(`/${other}${path}`)}" data-lang="${other}">${c.otherLang}</a></nav>
+    </div>
   </div>
 </footer>
 ${opts.clientData ? html`<script type="application/json" id="lk-data">${jsonScript(opts.clientData)}</script>` : ''}

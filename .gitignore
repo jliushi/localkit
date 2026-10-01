@@ -1,3 +1,8 @@
 node_modules/
 dist/
 test/out/
+test/scratch/
+# large generated fixtures (see test/make-fixtures.mjs)
+test/fixtures/phone-1080p.mp4
+test/fixtures/bigphoto.jpg
+test/fixtures/heavy.pdf

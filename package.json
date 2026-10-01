@@ -15,15 +15,20 @@
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
     "@huggingface/transformers": "^4.3.0",
+    "@mediabunny/mp3-encoder": "^1.61.0",
     "diff": "^9.0.0",
+    "gifenc": "^1.0.3",
     "heic2any": "^0.0.4",
     "jszip": "^3.10.2",
+    "mediabunny": "^1.61.0",
     "opencc-js": "^1.4.2",
     "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^6.3.289"
+    "pdfjs-dist": "^6.3.289",
+    "upng-js": "^2.1.0"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",
+    "lucide-static": "^1.48.0",
     "puppeteer": "^25.12.0"
   }
 }
