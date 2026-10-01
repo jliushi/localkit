@@ -2,6 +2,8 @@ import { $, $$, t, c, el, LK, icon, filePicker, fileCard, progress, alertBox, er
 import { convert, pickVideoCodec, ConversionCanceledError } from './media.js';
 import { prepare, metaLine, thumbnail, MEDIA_ACCEPT, SAMPLE_VIDEO } from './video-ui.js';
 import { getFFmpeg, run as ffRun } from './ffmpeg-common.js';
+import { toSrt, toVtt, toTxt, parseSubs } from './subs.js';
+import { translate, guessLanguage, canTarget } from './translate.js';
 
 let job = null;
 let segs = []; // { start, end, text }
@@ -12,31 +14,6 @@ const pick = filePicker($('#as-pick'), {
   accept: MEDIA_ACCEPT, iconName: 'fileVideo', title: t('drop'), hint: t('dropHint'), sample: SAMPLE_VIDEO(LK.base), onFiles: ([f]) => load(f),
 });
 const isVideo = () => !!(job?.info.width);
-
-// ---------------------------------------------------------------- subtitle formats
-
-const pad = (n, w = 2) => String(n).padStart(w, '0');
-function stamp(sec, sep) {
-  const ms = Math.max(0, Math.round(sec * 1000));
-  return `${pad(Math.floor(ms / 3600000))}:${pad(Math.floor(ms / 60000) % 60)}:${pad(Math.floor(ms / 1000) % 60)}${sep}${pad(ms % 1000, 3)}`;
-}
-export const toSrt = (list) => list.map((s, i) => `${i + 1}\n${stamp(s.start, ',')} --> ${stamp(s.end, ',')}\n${s.text}\n`).join('\n');
-export const toVtt = (list) => `WEBVTT\n\n${list.map((s) => `${stamp(s.start, '.')} --> ${stamp(s.end, '.')}\n${s.text}\n`).join('\n')}`;
-
-/** Parses SRT or WebVTT text into segments. */
-export function parseSubs(text) {
-  const out = [];
-  const blocks = text.replace(/\r/g, '').replace(/^﻿/, '').split(/\n{2,}/);
-  for (const b of blocks) {
-    const lines = b.split('\n').filter((l) => l.trim() !== '');
-    const i = lines.findIndex((l) => l.includes('-->'));
-    if (i < 0) continue;
-    const [a, z] = lines[i].split('-->').map((x) => parseTime(x.trim().split(/\s+/)[0]));
-    const body = lines.slice(i + 1).join('\n').replace(/<[^>]+>/g, '').trim();
-    if (a != null && z != null && body) out.push({ start: a, end: z, text: body });
-  }
-  return out.sort((x, y) => x.start - y.start);
-}
 
 // ---------------------------------------------------------------- audio for Whisper (16 kHz mono)
 
@@ -431,6 +408,37 @@ async function burn() {
     $('#as-burn').disabled = false;
   }
 }
+
+// ---------------------------------------------------------------- translation
+
+let trJob = null;
+$('#as-trgo').addEventListener('click', async () => {
+  const dst = $('#as-trto').value;
+  const src = guessLanguage(segs.map((x) => x.text));
+  if (src === dst) { $('#as-tr-task').replaceChildren(alertBox(t('trSame'), 'info')); return; }
+  if (!canTarget(src, dst)) { $('#as-tr-task').replaceChildren(alertBox(errorText(new Error(`${src} → ${dst}`)))); return; }
+  $('#as-trgo').disabled = true;
+  const task = progress($('#as-tr-task'), { title: t('trWorking'), onCancel: () => trJob?.cancel() });
+  try {
+    trJob = translate(segs.map((x) => x.text.replace(/
+/g, ' ')), src, dst, (ev) => {
+      if (ev.type === 'download') { task.title(t('trLoading', fmtBytes(ev.loaded), fmtBytes(ev.total))); task.set(ev.loaded / ev.total); }
+      else if (ev.type === 'ready') task.title(t('trWorking'));
+      else if (ev.type === 'progress') task.set(ev.value);
+    });
+    const out = await trJob.promise;
+    const bi = $('#as-trbi').checked;
+    segs = segs.map((x, i) => ({ ...x, text: bi ? `${x.text}
+${out[i]}` : out[i] }));
+    renderList();
+    $('#as-tr-task').replaceChildren(alertBox(t('trDone'), 'info'));
+  } catch (e) {
+    task.close();
+    $('#as-tr-task').replaceChildren(e?.name === 'AbortError' ? alertBox(c('canceled'), 'info') : alertBox(errorText(e)));
+  } finally {
+    $('#as-trgo').disabled = false;
+  }
+});
 
 $('#as-go').addEventListener('click', generate);
 $('#as-burn').addEventListener('click', burn);

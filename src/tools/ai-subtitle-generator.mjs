@@ -1,4 +1,5 @@
 import { html } from '../../build/html.mjs';
+import { SUB_LANGS } from './translate-subtitles.mjs';
 
 const LANGS = [
   ['', 'auto'], ['chinese', 'zh'], ['english', 'en'], ['cantonese', 'yue'], ['japanese', 'ja'], ['korean', 'ko'], ['spanish', 'es'], ['french', 'fr'],
@@ -111,6 +112,7 @@ export default {
         exportTitle: '下载字幕', srt: 'SRT', vtt: 'VTT', txt: '纯文本',
         burnTitle: '把字幕压制进视频', size: '字号', sizeS: '小', sizeM: '中', sizeL: '大', style: '样式', styleOutline: '描边', styleBox: '底框', position: '位置', posBottom: '底部', posTop: '顶部',
         burn: '压制进视频（MP4）', burning: '正在生成带字幕的视频…', burned: '带字幕的视频已生成 · $1', downloadVideo: '下载视频', audioOnly: '这是音频文件，无法压制字幕，请下载 SRT。',
+        trTitle: '翻译', trTo: '翻译成', trBi: '保留原文（双语字幕）', trGo: '翻译字幕', trLoading: '正在下载翻译模型（仅首次）· $1 / $2', trWorking: '正在翻译…', trDone: '字幕已翻译。', trSame: '字幕已经是这种语言了。',
         badSrt: '这个文件看起来不是 SRT 或 VTT 字幕。', imported: '已导入 $1 条字幕。', another: '换一个文件', newText: '新字幕',
       },
     },
@@ -145,6 +147,12 @@ export default {
         <div class="panel">
           <h3 style="margin:0">${s.exportTitle}</h3>
           <div class="actions"><button class="btn" id="as-srt">${s.srt}</button><button class="btn soft" id="as-vtt">${s.vtt}</button><button class="btn soft" id="as-txt">${s.txt}</button></div>
+        </div>
+        <div class="panel">
+          <h3 style="margin:0">${s.trTitle}</h3>
+          <div class="actions"><label class="inline-num">${s.trTo}<select id="as-trto" style="width:auto">${Object.entries(SUB_LANGS[lang]).filter(([k]) => k !== 'ko').map(([k, v]) => html`<option value="${k}"${k === (lang === 'zh' ? 'en' : 'zh') ? ' selected' : ''}>${v}</option>`)}</select></label>
+            <label class="check small"><input type="checkbox" id="as-trbi" checked> ${s.trBi}</label><button class="btn soft" id="as-trgo">${s.trGo}</button></div>
+          <div id="as-tr-task"></div>
         </div>
         <div class="panel" id="as-burnbox">
           <h3 style="margin:0">${s.burnTitle}</h3>
