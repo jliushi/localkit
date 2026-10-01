@@ -19,10 +19,10 @@ export default {
       "resume pdf",
       "curriculum vitae"
     ],
-    "title": "Free Resume Builder — Professional CV Templates, PDF Download, No Sign-up",
-    "desc": "Create a professional resume in minutes: fill in the form, pick a template and colour, watch the live A4 preview and download an ATS-friendly PDF. Free, no sign-up, no watermark — your data stays in your browser.",
+    "title": "Free Resume Builder — ATS-Friendly PDF, No Sign-up, No Watermark",
+    "desc": "Build a professional resume: fill in the form, pick a template, live A4 preview, download an ATS-friendly PDF. Free, no sign-up, no watermark — data stays in your browser.",
     "h1": "Free resume builder with PDF download",
-    "sub": "Fill in your details, choose a template and accent colour, and watch the resume update as you type. Download a crisp, text-based PDF that recruiters and applicant tracking systems can read — no account, no watermark.",
+    "sub": "A free online resume builder: fill in the form, choose a template and accent colour, and watch the resume update as you type. Download a crisp, text-based PDF that recruiters and applicant tracking systems (ATS) can read — no account, no watermark.",
     "features": [
       [
         "layout-template",
@@ -43,7 +43,7 @@ export default {
     "steps": [
       "Fill in the form, or press \"Load example\" to start from a sample.",
       "Choose a template and colour; the preview updates live and shows where pages break.",
-      "Press Download PDF and choose \"Save as PDF\" in the print window."
+      "Press Download PDF, then save the result as PDF."
     ],
     "guide": [
       [
@@ -96,7 +96,7 @@ export default {
       ],
       [
         "How do I get a PDF on my phone?",
-        "Press Download PDF, then choose \"Save as PDF\" (Android) or use the share button → \"Save to Files\" (iPhone) in the print screen."
+        "Press Download PDF; the PDF downloads like any other file and appears in Files (iPhone) or Downloads (Android)."
       ],
       [
         "Can I make a resume in Chinese?",
@@ -170,10 +170,10 @@ export default {
       "简历 pdf",
       "个人简历"
     ],
-    "title": "免费在线简历制作 — 专业简历模板，一键下载 PDF，免注册",
-    "desc": "几分钟做出专业简历：填写表单，选择模板和主题色，实时预览 A4 效果，下载可被招聘系统识别的 PDF。免费、免注册、无水印 —— 数据只保存在你的浏览器里。",
+    "title": "在线简历制作 — 免费简历模板，下载 PDF，免注册无水印",
+    "desc": "几分钟做出专业简历：填写表单，选择模板和主题色，实时预览 A4 效果，下载可被招聘系统（ATS）识别的 PDF。免费、免注册、无水印 —— 数据只存在你的浏览器里。",
     "h1": "免费在线简历制作，一键导出 PDF",
-    "sub": "填写个人信息，选择模板和主题色，简历随输入实时更新。下载清晰的文字版 PDF，HR 和招聘系统都能读取 —— 无需账号，没有水印。",
+    "sub": "这是一个免费的在线简历制作工具：填写个人信息，选择模板和主题色，简历随输入实时更新 A4 预览。下载清晰的文字版 PDF，HR 和招聘系统（ATS）都能读取 —— 无需账号，没有水印。",
     "features": [
       [
         "layout-template",
@@ -194,7 +194,7 @@ export default {
     "steps": [
       "填写表单，或点击「载入示例」从示例开始。",
       "选择模板和颜色，预览会实时更新并显示分页位置。",
-      "点击「下载 PDF」，在打印窗口中选择「另存为 PDF」。"
+      "点击「下载 PDF」，PDF 会像普通文件一样保存到下载文件夹。"
     ],
     "guide": [
       [
@@ -247,7 +247,7 @@ export default {
       ],
       [
         "手机上怎么得到 PDF？",
-        "点击「下载 PDF」，在打印界面中选择「另存为 PDF」（安卓），或点分享按钮 →「存储到文件」（iPhone）。"
+        "点击「下载 PDF」，PDF 会保存到「文件」（iPhone）或下载文件夹（安卓）。"
       ],
       [
         "可以做英文简历吗？",

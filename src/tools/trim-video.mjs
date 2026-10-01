@@ -10,11 +10,11 @@ export default {
     en: {
       name: 'Trim Video',
       short: 'Cut the start and end off a video, instantly and without quality loss.',
-      keywords: ['cut video', 'video cutter', 'clip', 'shorten', 'mp4 trimmer'],
-      title: 'Trim Video Online Free — Cut MP4, MOV & WebM Clips Instantly, No Upload',
-      desc: 'Cut a video to the part you need: drag the handles on the filmstrip, preview, and save in seconds without re-encoding or quality loss. MP4, MOV, MKV, WebM. Free, private, no watermark.',
+      keywords: ['cut video', 'video cutter', 'clip', 'shorten', 'mp4 trimmer', 'video trimmer', 'cut mp4', 'video clip'],
+      title: 'Trim Video Online Free — Cut MP4/MOV Clips Without Quality Loss',
+      desc: 'Free video trimmer: drag the handles, preview and save the clip you need in seconds — no re-encoding, no quality loss. MP4, MOV, MKV, WebM. No upload, no watermark.',
       h1: 'Trim video — cut out the part you want',
-      sub: 'Drag the yellow handles on the filmstrip, play the selection to check it, and save. The clip is cut without re-encoding, so it takes a second and looks exactly like the original.',
+      sub: 'Trim Video is a free online video trimmer: drag the yellow handles on the filmstrip, play the selection to check it, and save. The clip is cut without re-encoding — done in a second, with the exact quality of the original.',
       features: [
         ['film', 'Visual filmstrip', 'See thumbnails of the whole video and drag the start and end handles. The preview jumps to the exact frame under the handle.'],
         ['zap', 'Instant and lossless', 'The video stream is copied, not re-encoded, so even a long recording is trimmed in seconds with no loss of quality.'],
@@ -50,11 +50,11 @@ export default {
     zh: {
       name: '视频剪切',
       short: '剪掉视频的开头和结尾，秒出结果，画质无损。',
-      keywords: ['剪辑视频', '截取视频', '视频裁剪', '视频片段', 'mp4 剪切'],
-      title: '在线视频剪切 — 免费截取 MP4、MOV、WebM 片段，秒出结果不上传',
-      desc: '把视频剪成需要的片段：在缩略图时间轴上拖动手柄、预览，几秒钟保存，不重新编码、画质无损。支持 MP4、MOV、MKV、WebM。免费、私密、无水印。',
+      keywords: ['剪辑视频', '截取视频', '视频裁剪', '视频片段', 'mp4 剪切', '视频剪辑软件', '视频截取', '剪视频', '在线剪辑'],
+      title: '视频剪切 — 在线截取 MP4/MOV 片段，无损秒出，不上传',
+      desc: '把视频剪成需要的片段：在缩略图时间轴上拖动手柄、预览，几秒钟保存，不重新编码、画质无损。支持 MP4、MOV、MKV、WebM，免费、私密、无水印。',
       h1: '视频剪切：截取你想要的片段',
-      sub: '在缩略图时间轴上拖动黄色手柄，播放选中片段确认无误后保存。片段不经过重新编码，一秒钟完成，画质和原视频完全一样。',
+      sub: '视频剪切是一个免费的在线视频截取工具：在缩略图时间轴上拖动黄色手柄，播放选中片段确认后保存。片段不经过重新编码，一秒钟完成，画质和原视频完全一样，不上传。',
       features: [
         ['film', '可视化时间轴', '整段视频的缩略图一目了然，拖动开始和结束手柄，预览画面会跳到手柄所在的那一帧。'],
         ['zap', '秒剪且无损', '直接复制视频数据而不重新编码，即使很长的录像也能几秒剪完，画质没有任何损失。'],

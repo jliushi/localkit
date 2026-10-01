@@ -10,11 +10,11 @@ export default {
     en: {
       name: 'Video to MP3',
       short: 'Extract the audio from any video as MP3, M4A or WAV in seconds.',
-      keywords: ['extract audio', 'mp4 to mp3', 'convert video to audio', 'audio converter', 'm4a', 'wav'],
-      title: 'Video to MP3 Converter — Extract Audio from MP4/MOV Free, No Upload',
-      desc: 'Convert MP4, MOV, MKV or WebM to MP3, M4A or WAV in seconds. Drop a video and the audio is extracted instantly in your browser — choose quality, keep only part of it. Free, private, no watermark.',
+      keywords: ['extract audio', 'mp4 to mp3', 'convert video to audio', 'audio converter', 'm4a', 'wav', 'mov to mp3', 'video to audio', 'extract sound', 'youtube to mp3'],
+      title: 'Video to MP3 — Extract Audio from MP4/MOV Free, No Upload',
+      desc: 'Convert video to MP3 in seconds: drop an MP4, MOV, MKV or WebM and get the audio as MP3, M4A or WAV with quality choice. Runs in your browser — free, private, no upload.',
       h1: 'Video to MP3 — extract audio from video',
-      sub: 'Drop a video and get its soundtrack as an MP3 a moment later. Pick M4A for lossless-quality AAC or WAV for editing, and keep just the part you need.',
+      sub: 'Video to MP3 extracts the audio from any video and saves it as an MP3 — drop the file and the MP3 is ready a moment later, on your own device. Pick M4A for lossless-quality AAC or WAV for editing, and keep just the part you need.',
       features: [
         ['zap', 'Starts instantly', 'No settings needed: the MP3 is ready seconds after you drop the file. Change the format or quality any time and it re-converts.'],
         ['audio-lines', 'Your choice of quality', 'MP3 at 128, 192 or 320 kbps, M4A (AAC, copied without re-encoding when possible) or uncompressed WAV.'],
@@ -54,7 +54,7 @@ export default {
       title: '视频转 MP3 — 在线从 MP4/MOV 提取音频，免费不上传',
       desc: '几秒钟把 MP4、MOV、MKV、WebM 转成 MP3、M4A 或 WAV。拖入视频即可在浏览器里立刻提取音频，可选音质、可只保留一段。免费、私密、无水印。',
       h1: '视频转 MP3：从视频中提取音频',
-      sub: '拖入视频，片刻之后就能得到它的 MP3 音频。想要原汁原味的 AAC 选 M4A，要剪辑就选 WAV，还可以只保留需要的那一段。',
+      sub: '视频转 MP3 可以把 MP4、MOV 等视频的音频提取出来保存为 MP3：拖入视频，片刻之后就能下载。想要原汁原味的 AAC 选 M4A，要再剪辑就选 WAV，全部在浏览器本地完成。',
       features: [
         ['zap', '拖入即开始', '无需任何设置：拖入文件几秒后 MP3 就准备好了。随时更改格式或音质，会自动重新转换。'],
         ['audio-lines', '音质随你选', 'MP3 可选 128、192、320 kbps；M4A（AAC，可能时直接复制不重新编码）；或无压缩的 WAV。'],
