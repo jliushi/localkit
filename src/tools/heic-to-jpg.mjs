@@ -13,7 +13,7 @@ export default {
       short: 'Convert iPhone HEIC photos to JPG (or PNG) in bulk.',
       keywords: ['heic converter', 'heif to jpg', 'iphone photo to jpg', 'heic to png', 'open heic on windows'],
       title: 'HEIC to JPG Converter — iPhone Photos to JPG Free, No Upload',
-      desc: 'Convert HEIC and HEIF photos from iPhone to JPG or PNG in bulk, right in your browser. Full resolution kept, rotation fixed, location data removed. Free, private — never uploaded.',
+      desc: 'Convert HEIC photos from iPhone to JPG or PNG in bulk, right in your browser. Full resolution kept, rotation fixed, location data removed. Free, never uploaded.',
       h1: 'Convert HEIC photos to JPG',
       sub: 'HEIC to JPG converts iPhone photos to standard JPGs that open everywhere. iPhones save photos as HEIC, which many Windows apps, websites and printers can\'t open — drop your HEIC files and download full-resolution JPGs, privately, on your own device.',
       features: [

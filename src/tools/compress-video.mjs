@@ -12,7 +12,7 @@ export default {
       short: 'Shrink MP4, MOV and other videos to a target size, keeping good quality.',
       keywords: ['reduce video size', 'video compressor', 'mp4', 'mov', 'smaller', 'email', 'discord', 'whatsapp', 'make video smaller', 'compress mp4'],
       title: 'Compress Video Online Free — MP4/MOV to 10/25 MB, No Upload',
-      desc: 'Free video compressor: target a size like 10 MB or 25 MB, keep the best quality that fits. MP4, MOV, MKV, WebM — fast hardware encoding in the browser. No upload, no watermark.',
+      desc: 'Free video compressor: target a size like 10 MB or 25 MB, with the best quality that fits. MP4, MOV, MKV, WebM — hardware encoding, no upload, no watermark.',
       h1: 'Compress video to a smaller file size',
       sub: 'Compress Video is a free online video compressor: drop an MP4 or MOV, choose a target size like 10 MB for Discord or 25 MB for e-mail, and get the sharpest video that fits. It runs with hardware encoding on your own device — fast, and nothing is uploaded.',
       features: [

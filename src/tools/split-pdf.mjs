@@ -13,7 +13,7 @@ export default {
       short: 'Extract pages or split a PDF into several files.',
       keywords: ['extract pages', 'separate pdf', 'pdf splitter', 'split pdf pages', 'pdf page range', 'separate pdf into pages'],
       title: 'Split PDF Online — Extract or Separate Pages Free, No Upload',
-      desc: 'Split a PDF visually: click pages to extract them into a new PDF, split every page into its own file, cut every N pages or type ranges like 1-3, 8-10. Free, private, no upload.',
+      desc: 'Split a PDF visually: click pages to extract them, split each page into its own file, cut every N pages or type ranges like 1-3, 8-10. Free — no upload.',
       h1: 'Split a PDF or extract pages',
       sub: 'Split PDF is a free online PDF splitter: open your document, see every page as a thumbnail, and click pages to extract them — or split into single pages, fixed-size chunks or custom ranges like 1-3, 8-10. Nothing is uploaded.',
       features: [

@@ -13,7 +13,7 @@ export default {
       short: 'Find every difference between two texts, highlighted word by word.',
       keywords: ['diff checker', 'text compare', 'compare two texts', 'find differences', 'code diff', 'diffchecker alternative', 'text difference', 'online diff'],
       title: 'Compare Text Online — Free Diff Checker, No Upload',
-      desc: 'Paste two texts and see every added, removed and changed line with the exact words highlighted. Side-by-side or inline, ignore case or whitespace. Free, private — nothing uploaded.',
+      desc: 'Paste two texts and see every added, removed and changed line, with the exact words highlighted. Side-by-side or inline view, ignore case and whitespace.',
       h1: 'Compare two texts and highlight the differences',
       sub: 'Compare Text is a free online diff checker: paste the original and the changed version and every difference appears instantly as you type — line by line, with the changed words marked. Works for documents, contracts, code and Chinese text.',
       features: [

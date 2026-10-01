@@ -13,7 +13,7 @@ export default {
       short: 'Combine photos and images (JPG, PNG, HEIC) into one PDF.',
       keywords: ['image to pdf', 'png to pdf', 'photo to pdf', 'heic to pdf', 'pictures to pdf', 'images to pdf'],
       title: 'JPG to PDF — Convert Images to PDF Free, No Upload',
-      desc: 'Convert JPG, PNG, HEIC and WebP images to PDF: drag to reorder, choose A4, Letter or image size, orientation and margins. JPGs embedded losslessly. Free, private, no upload.',
+      desc: 'Convert JPG, PNG, HEIC and WebP to PDF: drag to reorder, pick A4, Letter or image size, orientation and margins. JPGs embedded losslessly. Free, no upload.',
       h1: 'Convert JPG and other images to PDF',
       sub: 'JPG to PDF combines photos, screenshots and scans into one PDF document. Drag the images into order, pick the page size and margins, and download — nothing is uploaded, and JPGs keep their original quality.',
       features: [

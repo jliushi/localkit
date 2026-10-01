@@ -16,12 +16,12 @@ export default {
       name: 'Translate Subtitles',
       short: 'Translate SRT/VTT subtitles with on-device AI, or make bilingual subtitles.',
       keywords: ['srt translator', 'subtitle translator', 'translate srt', 'bilingual subtitles', 'dual subtitles', 'vtt translate'],
-      title: 'Subtitle Translator — Translate SRT & VTT Files Free with AI (No Upload)',
-      desc: 'Translate SRT and VTT subtitle files between English, Chinese, Spanish, French, German, Japanese and more with on-device AI. Keep timings, make bilingual subtitles, edit and download. Free, no sign-up, no upload.',
+      title: 'Subtitle Translator — SRT & VTT Files Free with AI (No Upload)',
+      desc: 'Translate SRT and VTT subtitles between 12 languages with on-device AI. Timings kept, translated-only or bilingual output, every line editable. Free, no upload.',
       h1: 'Translate subtitles (SRT & VTT)',
       sub: 'Drop an SRT or VTT file and an AI translation model running in your browser translates every line while keeping the original timings. Choose translated-only or bilingual subtitles, fix any line, and download.',
       features: [
-        ['languages', '12 languages', 'English, Chinese, Spanish, French, German, Japanese, Russian, Italian, Vietnamese, Indonesian, Arabic and Korean (to English), using open OPUS-MT models.'],
+        ['languages', '12 languages', 'English ↔ Chinese, Spanish, French, German, Japanese, Russian, Italian, Vietnamese, Indonesian and Arabic, plus Korean → English; other pairs go via English. Open OPUS-MT models.'],
         ['subtitles', 'Bilingual subtitles', 'Put the original and the translation on two lines of the same subtitle — great for language learning and international audiences.'],
         ['shield-check', 'Private and free', 'The model runs on your device; your subtitles are never sent to a translation server, and there are no character limits.'],
       ],
@@ -39,7 +39,7 @@ export default {
         ['How do I translate an SRT file?', 'Drop the .srt file, choose the target language and press Translate. Download the translated .srt when it finishes; the timings are unchanged.'],
         ['Can I make bilingual (dual-language) subtitles?', 'Yes. Choose "Bilingual" and each subtitle shows the original line with the translation underneath.'],
         ['Is there a length limit?', 'No. Long subtitle files take longer but have no character or file-size limit.'],
-        ['Which languages are supported?', 'English ↔ Chinese, Spanish, French, German, Japanese, Russian, Italian, Vietnamese, Indonesian and Arabic, and Korean → English. Other combinations are translated via English.'],
+        ['Which languages are supported?', 'English ↔ Chinese, Spanish, French, German, Japanese, Russian, Italian, Vietnamese, Indonesian and Arabic, plus Korean → English. Other combinations (for example Chinese → Spanish) are translated via English, which can lose some nuance.'],
         ['Are my subtitles uploaded?', 'No. Translation runs in your browser; only the model files are downloaded.'],
       ],
       ui: {
@@ -59,7 +59,7 @@ export default {
       h1: '字幕翻译（SRT / VTT）',
       sub: '拖入 SRT 或 VTT 字幕文件，在浏览器里运行的 AI 翻译模型会逐句翻译，并保留原来的时间轴。可以只要译文，也可以生成双语字幕，每一句都能修改后再下载。',
       features: [
-        ['languages', '12 种语言', '中文、英语、西班牙语、法语、德语、日语、俄语、意大利语、越南语、印尼语、阿拉伯语，以及韩语译英语，使用开源的 OPUS-MT 模型。'],
+        ['languages', '12 种语言', '英语与中文、西班牙语、法语、德语、日语、俄语、意大利语、越南语、印尼语、阿拉伯语互译，另有韩语译英语；其余组合经英语中转。使用开源的 OPUS-MT 模型。'],
         ['subtitles', '双语字幕', '原文和译文显示在同一条字幕的上下两行 —— 学外语、面向海外观众都很合适。'],
         ['shield-check', '私密且免费', '模型在你的设备上运行，字幕不会发送到任何翻译服务器，也没有字数限制。'],
       ],

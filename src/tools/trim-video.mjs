@@ -12,7 +12,7 @@ export default {
       short: 'Cut the start and end off a video, instantly and without quality loss.',
       keywords: ['cut video', 'video cutter', 'clip', 'shorten', 'mp4 trimmer', 'video trimmer', 'cut mp4', 'video clip'],
       title: 'Trim Video Online Free — Cut MP4/MOV Clips Without Quality Loss',
-      desc: 'Free video trimmer: drag the handles, preview and save the clip you need in seconds — no re-encoding, no quality loss. MP4, MOV, MKV, WebM. No upload, no watermark.',
+      desc: 'Free video trimmer: drag the handles on the timeline and save the clip in seconds — no re-encoding, no quality loss. MP4, MOV, MKV, WebM. No upload, no sign-up.',
       h1: 'Trim video — cut out the part you want',
       sub: 'Trim Video is a free online video trimmer: drag the yellow handles on the filmstrip, play the selection to check it, and save. The clip is cut without re-encoding — done in a second, with the exact quality of the original.',
       features: [

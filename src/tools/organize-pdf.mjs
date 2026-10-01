@@ -13,7 +13,7 @@ export default {
       short: 'Rotate, delete and reorder PDF pages with drag and drop.',
       keywords: ['rotate pdf', 'delete pdf pages', 'reorder pdf', 'rearrange pdf', 'remove pages from pdf', 'organize pdf', 'flip pdf'],
       title: 'Rotate PDF & Delete or Reorder Pages — Free Online, No Upload',
-      desc: 'Rotate PDF pages, delete pages and drag them into a new order with page thumbnails. Bulk-select pages, append another PDF, and save. Free, private, in your browser.',
+      desc: 'Rotate, delete and reorder PDF pages with drag-and-drop page thumbnails. Bulk-select pages, append another PDF, and save. Free, private — runs in your browser.',
       h1: 'Rotate, delete and reorder PDF pages',
       sub: 'This PDF organizer fixes page problems without uploading anything: straighten sideways scans, remove blank or unwanted pages, and drag pages into the right order with live thumbnails, then save a clean new PDF.',
       features: [

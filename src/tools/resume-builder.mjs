@@ -20,7 +20,7 @@ export default {
       "curriculum vitae"
     ],
     "title": "Free Resume Builder — ATS-Friendly PDF, No Sign-up, No Watermark",
-    "desc": "Build a professional resume: fill in the form, pick a template, live A4 preview, download an ATS-friendly PDF. Free, no sign-up, no watermark — data stays in your browser.",
+    "desc": "Build a professional resume: fill in the form, pick a template, see a live A4 preview, download an ATS-friendly PDF. Free, no sign-up, no watermark.",
     "h1": "Free resume builder with PDF download",
     "sub": "A free online resume builder: fill in the form, choose a template and accent colour, and watch the resume update as you type. Download a crisp, text-based PDF that recruiters and applicant tracking systems (ATS) can read — no account, no watermark.",
     "features": [

@@ -13,7 +13,7 @@ export default {
       short: 'Turn phone photos of documents into a clean, straight scanned PDF.',
       keywords: ['document scanner', 'scan document', 'phone scanner', 'camera scanner', 'photo to scan', 'receipt scanner'],
       title: 'Scan to PDF — Free Online Document Scanner, No App, No Upload',
-      desc: 'Free online document scanner: photograph paper documents, receipts or notes and get a clean PDF. Automatic edge detection, perspective correction, scan filters. No app to install, no upload.',
+      desc: 'Free online document scanner: photograph documents, receipts or notes and get a clean PDF. Auto edge detection, perspective correction, scan filters. No upload.',
       h1: 'Scan documents to PDF with your phone',
       sub: 'Scan to PDF is a free document scanner that works in your browser: photograph a document, receipt or whiteboard and LocalKit finds the page edges, straightens it, cleans up shadows and saves a crisp PDF. No app to install — photos never leave your device.',
       features: [

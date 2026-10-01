@@ -13,7 +13,7 @@ export default {
       short: 'Convert between JPG, PNG, WebP, AVIF and ICO, in bulk.',
       keywords: ['png to jpg', 'jpg to png', 'webp to jpg', 'webp to png', 'jpg to webp', 'png to ico', 'favicon', 'avif', 'image format', 'svg to png'],
       title: 'Image Converter Online — PNG/WebP/AVIF/ICO/JPG, No Upload',
-      desc: 'Convert images between JPG, PNG, WebP, AVIF and ICO in bulk: PNG to JPG, WebP to JPG, JPG to WebP, favicons. Resize while converting. Free, private, in your browser.',
+      desc: 'Convert images between JPG, PNG, WebP, AVIF and ICO in bulk: PNG to JPG, WebP to JPG, favicons and more. Resize while converting. Free, private — no upload.',
       h1: 'Convert images to JPG, PNG, WebP, AVIF or ICO',
       sub: 'Image Converter changes the format of any number of images at once — WebP downloads that won\'t open, PNG screenshots that are too big, a logo that needs to become a favicon. Conversion starts the moment you drop the files; nothing is uploaded.',
       features: [

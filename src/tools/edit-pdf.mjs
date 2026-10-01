@@ -13,7 +13,7 @@ export default {
       short: 'Add text, signatures, checkmarks and images to a PDF, or white-out content.',
       keywords: ['sign pdf', 'fill pdf', 'add text to pdf', 'pdf editor', 'e-signature', 'whiteout pdf', 'pdf signature'],
       title: 'Edit PDF Online — Add Text & Sign PDF Free, No Upload',
-      desc: 'Fill in and sign PDFs online: type text, upload or draw your signature, add checkmarks and images, white-out content. Free, no sign-up — the PDF never leaves your browser.',
+      desc: 'Fill in and sign PDFs online: type text, draw or upload a signature, add checkmarks and images, white-out content. Free, no sign-up — nothing is uploaded.',
       h1: 'Edit & sign PDF — add text, signature and more',
       sub: 'A free online PDF editor to fill in forms, sign contracts and add notes directly on the page. Draw, type or upload your signature, tick boxes, and white-out anything you need to hide — works in Chinese and every other language.',
       features: [

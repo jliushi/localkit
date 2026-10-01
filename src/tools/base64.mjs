@@ -13,7 +13,7 @@ export default {
       short: 'Convert text or files to Base64 and back — live, both directions.',
       keywords: ['base64 decoder', 'base64 encoder', 'base64 to image', 'image to base64', 'data uri', 'base64 to file'],
       title: 'Base64 Encode & Decode Online — Text, Files & Images, No Upload',
-      desc: 'Encode text or files to Base64 and decode Base64 back to text, images or files — live as you type. UTF-8, URL-safe Base64 and data URIs. Free, private, no upload.',
+      desc: 'Encode text or files to Base64 and decode back to text, images or files — live as you type. UTF-8, URL-safe Base64 and data URIs. Free, private, no upload.',
       h1: 'Base64 encoder and decoder',
       sub: 'A free Base64 encoder and decoder: type in either box and the other updates instantly — text becomes Base64, Base64 becomes text. Drop a file to get its Base64 or data URI, or paste Base64 to preview and download the file inside it.',
       features: [

@@ -12,7 +12,7 @@ export default {
       short: 'Extract the audio from any video as MP3, M4A or WAV in seconds.',
       keywords: ['extract audio', 'mp4 to mp3', 'convert video to audio', 'audio converter', 'm4a', 'wav', 'mov to mp3', 'video to audio', 'extract sound', 'youtube to mp3'],
       title: 'Video to MP3 — Extract Audio from MP4/MOV Free, No Upload',
-      desc: 'Convert video to MP3 in seconds: drop an MP4, MOV, MKV or WebM and get the audio as MP3, M4A or WAV with quality choice. Runs in your browser — free, private, no upload.',
+      desc: 'Convert video to audio in seconds: drop an MP4, MOV, MKV or WebM and get MP3, M4A or WAV, with a choice of quality. Free and private — nothing is uploaded.',
       h1: 'Video to MP3 — extract audio from video',
       sub: 'Video to MP3 extracts the audio from any video and saves it as an MP3 — drop the file and the MP3 is ready a moment later, on your own device. Pick M4A for lossless-quality AAC or WAV for editing, and keep just the part you need.',
       features: [

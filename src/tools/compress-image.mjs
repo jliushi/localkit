@@ -13,7 +13,7 @@ export default {
       short: 'Shrink JPG, PNG and WebP images — batch, with a target size in KB.',
       keywords: ['reduce image size', 'image compressor', 'compress jpg', 'compress png', 'photo size kb', 'tinypng alternative', 'resize photo', 'compress photo'],
       title: 'Compress Image Online — JPG/PNG/WebP to KB, Free, No Upload',
-      desc: 'Compress JPG, PNG and WebP images in bulk: up to 90% smaller with no visible loss, or hit an exact size like 100 KB or 200 KB. Resize and strip location data. Free, private.',
+      desc: 'Compress JPG, PNG and WebP images in bulk: up to 90% smaller with no visible loss, or an exact size like 100 KB. Resize and strip location data. Free, private.',
       h1: 'Compress images — JPG, PNG and WebP',
       sub: 'Compress Image makes JPG, PNG and WebP photos smaller without visible loss — often 60–90% savings — and can hit an exact size like 200 KB for application forms. Everything runs on your device: nothing is uploaded.',
       features: [

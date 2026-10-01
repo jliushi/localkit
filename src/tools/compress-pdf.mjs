@@ -13,7 +13,7 @@ export default {
       short: 'Make PDFs smaller by recompressing their images, keeping text sharp.',
       keywords: ['reduce pdf size', 'pdf compressor', 'shrink pdf', 'make pdf smaller', 'pdf size', 'compress pdf online'],
       title: 'Compress PDF Online — Reduce PDF Size Free, No Upload',
-      desc: 'Reduce PDF file size by recompressing the photos and scans inside, while text stays sharp and selectable. Three compression levels, clear before/after sizes. Free, private, no upload.',
+      desc: 'Reduce PDF size by recompressing the photos and scans inside; text stays sharp and selectable. Three levels, with before/after sizes. Free, private — no upload.',
       h1: 'Compress PDF — reduce the file size',
       sub: 'Compress PDF shrinks a PDF by recompressing the images inside it. Most large PDFs are large because of their photos and scans; those are resized and recompressed while text, fonts and vector graphics stay untouched — sharp and searchable, on your device only.',
       features: [

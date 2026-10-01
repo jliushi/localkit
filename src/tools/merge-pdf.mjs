@@ -13,7 +13,7 @@ export default {
       short: 'Combine several PDFs into one file, in the order you choose.',
       keywords: ['combine pdf', 'join pdf', 'pdf merger', 'merge pdf files', 'combine multiple pdfs', 'merge pdf online'],
       title: 'Merge PDF Online Free — Combine PDFs into One, No Upload',
-      desc: 'Combine multiple PDF files into one: drag to reorder, preview each file\'s first page, and download. Free, no sign-up, no watermark — PDFs never leave your device.',
+      desc: 'Combine multiple PDFs into one: drag to reorder, preview each file\'s first page, and download. Free, no sign-up, no watermark — PDFs never leave your device.',
       h1: 'Merge PDF files into one document',
       sub: 'Merge PDF combines several PDF files into one: add your PDFs, drag them into order and download a single document. Pages are copied exactly as they are, and nothing is uploaded — safe for contracts, invoices and scans.',
       features: [

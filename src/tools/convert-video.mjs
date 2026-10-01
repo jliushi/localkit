@@ -12,7 +12,7 @@ export default {
       short: 'Convert MOV, MKV, WebM, AVI and more to MP4 (or back), often instantly.',
       keywords: ['video converter', 'mov to mp4', 'mkv to mp4', 'webm to mp4', 'avi to mp4', 'mp4 to webm', 'format'],
       title: 'Video Converter Online Free — MOV/MKV/AVI/WebM to MP4, No Upload',
-      desc: 'Convert videos between MP4, MOV, WebM and MKV — MOV to MP4, MKV to MP4, WebM to MP4, AVI to MP4. Instant without re-encoding when possible. Free, private, no upload.',
+      desc: 'Convert videos between MP4, MOV, WebM, MKV and AVI — MOV, MKV or WebM to MP4. Instant without re-encoding when possible. Free, private, runs in your browser.',
       h1: 'Convert video to MP4, MOV, WebM or MKV',
       sub: 'This free online video converter changes a video\'s format — MOV to MP4, MKV to MP4, WebM to MP4 — so it plays where you need it. When the video data is already compatible, LocalKit just rewraps it: seconds instead of minutes, original quality, no upload.',
       features: [

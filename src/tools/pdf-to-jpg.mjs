@@ -13,7 +13,7 @@ export default {
       short: 'Turn PDF pages into high-quality JPG or PNG images.',
       keywords: ['pdf to image', 'pdf to png', 'convert pdf to jpg', 'pdf page to picture', 'extract images', 'pdf to photo'],
       title: 'PDF to JPG Converter — Pages to JPG/PNG Free, No Upload',
-      desc: 'Convert PDF pages to JPG or PNG images in high resolution (up to 300 DPI). Pick pages, preview and download one image or a ZIP. Free, private — the PDF stays in your browser.',
+      desc: 'Convert PDF pages to JPG or PNG images in high resolution (up to 300 DPI). Pick pages, preview and download one image or a ZIP. Free, private — no upload.',
       h1: 'Convert PDF to JPG images',
       sub: 'PDF to JPG turns every page of a document — or just the pages you pick — into sharp JPG or PNG images for slides, social media, chats or documents. Choose screen or print resolution, up to 300 DPI; the PDF never leaves your browser.',
       features: [

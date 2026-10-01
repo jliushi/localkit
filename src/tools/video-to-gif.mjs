@@ -12,7 +12,7 @@ export default {
       short: 'Turn a clip from any video into a looping animated GIF.',
       keywords: ['gif maker', 'mp4 to gif', 'animated gif', 'make gif', 'meme', 'mov to gif', 'gif converter'],
       title: 'Video to GIF Converter — Make GIFs from MP4/MOV, No Upload',
-      desc: 'Turn a video clip into an animated GIF: pick the moment, set size, frame rate and speed, and download. MP4, MOV, WebM to GIF in your browser — free, no watermark, no upload.',
+      desc: 'Turn a video clip into an animated GIF: pick the moment, set size, frame rate and speed, and download. All in your browser — free, no watermark, no upload.',
       h1: 'Video to GIF — make an animated GIF from a video',
       sub: 'Video to GIF turns a clip of any video into a looping animated GIF: pick the moment on the filmstrip, set the size and smoothness, and download a GIF for chats, docs or memes — rendered on your device, nothing uploaded, no watermark.',
       features: [

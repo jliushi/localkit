@@ -11,8 +11,8 @@ export default {
       name: 'Blur Video (Privacy)',
       short: 'Blur or pixelate faces, licence plates and personal details in a video.',
       keywords: ['blur face in video', 'pixelate video', 'censor video', 'hide license plate', 'mosaic video', 'blur part of video'],
-      title: 'Blur Part of a Video Online — Hide Faces, Plates & Text Free (No Upload)',
-      desc: 'Blur, pixelate or black out any area of a video: faces, licence plates, addresses, screens. Draw boxes, choose when each one applies, preview and export MP4. Free and private — the video never leaves your browser.',
+      title: 'Blur Video Online — Hide Faces, Plates & Text Free (No Upload)',
+      desc: 'Blur, pixelate or black out faces, licence plates, text or screens in a video. Draw boxes, set when each applies, export MP4. Free and private — no upload.',
       h1: 'Blur or pixelate part of a video',
       sub: 'Draw a box over anything that shouldn\'t be seen — a face, a licence plate, a phone number on a screen — choose blur, mosaic or a solid box, and export a privacy-safe MP4. Processing happens on your device, so the unblurred original is never uploaded anywhere.',
       features: [
