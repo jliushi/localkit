@@ -11,11 +11,11 @@ export default {
     en: {
       name: 'Merge PDF',
       short: 'Combine several PDFs into one file, in the order you choose.',
-      keywords: ['combine pdf', 'join pdf', 'pdf merger', 'merge pdf files'],
-      title: 'Merge PDF Online Free — Combine PDF Files in Seconds (No Upload)',
-      desc: 'Combine multiple PDF files into one: drag to reorder, see the first page of each file, and download the merged PDF. Free, no sign-up, no watermark — PDFs never leave your device.',
+      keywords: ['combine pdf', 'join pdf', 'pdf merger', 'merge pdf files', 'combine multiple pdfs', 'merge pdf online'],
+      title: 'Merge PDF Online Free — Combine PDFs into One, No Upload',
+      desc: 'Combine multiple PDF files into one: drag to reorder, preview each file\'s first page, and download. Free, no sign-up, no watermark — PDFs never leave your device.',
       h1: 'Merge PDF files into one document',
-      sub: 'Add your PDFs, drag them into order and download one combined file. Pages are copied exactly as they are, and nothing is uploaded — ideal for contracts, invoices and scans.',
+      sub: 'Merge PDF combines several PDF files into one: add your PDFs, drag them into order and download a single document. Pages are copied exactly as they are, and nothing is uploaded — safe for contracts, invoices and scans.',
       features: [
         ['grip-vertical', 'Drag to reorder', 'Each file shows its first page and page count. Drag cards or use the arrows to put them in the right order.'],
         ['badge-check', 'Original quality', 'Pages, text, fonts, links and images are copied unchanged — nothing is re-compressed or rasterised.'],
@@ -46,11 +46,11 @@ export default {
     zh: {
       name: 'PDF 合并',
       short: '把多个 PDF 按你想要的顺序合并成一个文件。',
-      keywords: ['合并 pdf', 'pdf 拼接', 'pdf 合并工具', '多个 pdf 合成一个'],
+      keywords: ['合并 pdf', 'pdf合并', 'pdf 拼接', 'pdf 合并工具', '多个 pdf 合成一个', 'pdf合拼', '在线合并 pdf'],
       title: 'PDF 合并 — 在线免费把多个 PDF 合并成一个（不上传）',
       desc: '把多个 PDF 合并成一个：可拖动排序，能看到每个文件的第一页，直接下载合并后的 PDF。免费、免注册、无水印 —— PDF 不离开你的设备。',
       h1: '把多个 PDF 合并成一个文件',
-      sub: '添加 PDF，拖动调整顺序，下载合并好的文件。页面原样复制，也不会上传任何内容 —— 合同、发票、扫描件都可以放心合并。',
+      sub: 'PDF 合并是一个免费的在线工具：添加多个 PDF，拖动调整顺序，下载合并好的文件。页面原样复制，全程不上传 —— 合同、发票、扫描件都可以放心合并。',
       features: [
         ['grip-vertical', '拖动排序', '每个文件都显示第一页和页数，拖动卡片或使用箭头调整到正确的顺序。'],
         ['badge-check', '保持原始质量', '页面、文字、字体、链接和图片原样复制，不会重新压缩，也不会转成图片。'],

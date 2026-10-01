@@ -22,8 +22,8 @@ export default {
       name: 'AI Subtitle Generator',
       short: 'Auto-generate subtitles with Whisper AI, edit them, export SRT or burn them in.',
       keywords: ['auto subtitles', 'caption generator', 'speech to text', 'transcribe', 'srt', 'whisper', 'add subtitles to video'],
-      title: 'AI Subtitle Generator — Auto Subtitles for Video, Free SRT Download (No Upload)',
-      desc: 'Automatically generate subtitles for any video or audio with Whisper AI, in 99 languages. Edit the text and timing, download SRT/VTT, or burn subtitles into the video. Runs privately in your browser — free, no upload, no watermark.',
+      title: 'AI Subtitle Generator — Auto Subtitles, SRT Download, No Upload',
+      desc: 'Auto-generate subtitles with Whisper AI in 99 languages. Edit text and timing, download SRT/VTT or burn subtitles into the video. Free, private, in your browser — no upload.',
       h1: 'AI subtitle generator — automatic subtitles for your video',
       sub: 'Drop a video and the Whisper speech-recognition AI writes timed subtitles in about 99 languages. Fix any word in the editor, then download an SRT file or a video with the subtitles burned in. The AI runs on your own device: your video is never uploaded.',
       features: [
@@ -70,8 +70,8 @@ export default {
       name: 'AI 字幕生成',
       short: '用 Whisper AI 自动生成字幕，可编辑，导出 SRT 或直接压制进视频。',
       keywords: ['自动字幕', '视频加字幕', '语音转文字', '字幕提取', 'srt', 'whisper', '字幕生成器'],
-      title: 'AI 字幕生成 — 视频自动加字幕，免费下载 SRT（不上传）',
-      desc: '用 Whisper AI 为任意视频或音频自动生成字幕，支持中文、英文等 99 种语言。可修改文字和时间轴，下载 SRT/VTT，或把字幕压制进视频。在浏览器里私密运行 —— 免费、不上传、无水印。',
+      title: 'AI 字幕生成 — 视频自动生成字幕，免费 SRT，不上传',
+      desc: '用 Whisper AI 为视频或音频自动生成字幕，支持中文、英文等 99 种语言。可编辑文字和时间轴，下载 SRT/VTT，或压制进视频。浏览器本地运行 —— 免费、不上传、无水印。',
       h1: 'AI 字幕生成：视频自动加字幕',
       sub: '拖入视频，Whisper 语音识别 AI 就会写出带时间轴的字幕，支持约 99 种语言。在编辑器里改好错字，就能下载 SRT 字幕文件，或得到压制了字幕的视频。AI 在你自己的设备上运行，视频绝不上传。',
       features: [
