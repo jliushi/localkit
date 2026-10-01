@@ -1,0 +1,29 @@
+{
+  "name": "localkit",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Free bilingual (English / 中文) online tools that run entirely in the browser: AI subtitles, PDF tools, image converter, video tools, resume builder, text diff, Base64.",
+  "scripts": {
+    "build": "node build/build.mjs",
+    "serve": "node build/serve.mjs",
+    "test": "node test/run.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
+    "@huggingface/transformers": "^4.3.0",
+    "diff": "^9.0.0",
+    "heic2any": "^0.0.4",
+    "jszip": "^3.10.2",
+    "opencc-js": "^1.4.2",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.3.289"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "puppeteer": "^25.12.0"
+  }
+}
