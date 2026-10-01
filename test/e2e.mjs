@@ -148,7 +148,8 @@ await test('convert-video:remux+reencode', async () => {
   const n1 = await waitDownload(page, 1);
   assert(probe(n1).format.format_name.includes('mp4'), 'mp4 container');
   await upload(page, '#cx-pick', ['clip-zh.mp4']);
-  await waitText(page, '#cx-mode', /re-encoding/);
+  // Wait for state unique to the new file (its card, Convert enabled), not the stale mode text of the previous file.
+  await page.waitForFunction(() => /clip-zh.mp4/.test(document.querySelector('#cx-file')?.innerText || '') && !document.querySelector('#cx-go').disabled && /re-encoding/.test(document.querySelector('#cx-mode')?.innerText || '') && !/Instant/.test(document.querySelector('#cx-mode')?.innerText || ''), { timeout: 60000, polling: 200 });
   await page.click('#cx-go');
   await waitText(page, '#cx-result', /WEBM/, 120000);
   await page.click('#cx-result .btn.lg');
@@ -160,7 +161,7 @@ await test('convert-video:remux+reencode', async () => {
 await test('convert-video:legacy-avi', async () => {
   const page = await open('/convert-video/');
   await upload(page, '#cx-pick', ['clip.avi']);
-  await page.waitForSelector('#cx-file .meta small');
+  await page.waitForFunction(() => /clip.avi/.test(document.querySelector('#cx-file')?.innerText || '') && !document.querySelector('#cx-go').disabled, { timeout: 60000, polling: 200 });
   await page.click('#cx-go');
   await page.waitForSelector('#cx-result .result', { timeout: 180000 });
   await page.click('#cx-result .btn.lg');
