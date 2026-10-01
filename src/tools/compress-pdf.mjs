@@ -11,11 +11,11 @@ export default {
     en: {
       name: 'Compress PDF',
       short: 'Make PDFs smaller by recompressing their images, keeping text sharp.',
-      keywords: ['reduce pdf size', 'pdf compressor', 'shrink pdf', 'make pdf smaller', 'pdf size'],
-      title: 'Compress PDF Online Free — Reduce PDF File Size, Keep Text Sharp (No Upload)',
-      desc: 'Reduce PDF file size by recompressing the photos and scans inside it, while text stays sharp and selectable. Three compression levels, before/after sizes. Free, private, in your browser — no upload.',
+      keywords: ['reduce pdf size', 'pdf compressor', 'shrink pdf', 'make pdf smaller', 'pdf size', 'compress pdf online'],
+      title: 'Compress PDF Online — Reduce PDF Size Free, No Upload',
+      desc: 'Reduce PDF size by recompressing the photos and scans inside; text stays sharp and selectable. Three levels, with before/after sizes. Free, private — no upload.',
       h1: 'Compress PDF — reduce the file size',
-      sub: 'Most large PDFs are large because of the images in them. LocalKit recompresses and downsizes those images while leaving text, fonts and vector graphics untouched, so the document stays sharp and searchable.',
+      sub: 'Compress PDF shrinks a PDF by recompressing the images inside it. Most large PDFs are large because of their photos and scans; those are resized and recompressed while text, fonts and vector graphics stay untouched — sharp and searchable, on your device only.',
       features: [
         ['image-down', 'Shrinks the images only', 'Photos and scanned pages are resized and recompressed; text and drawings stay vector and selectable.'],
         ['sliders-horizontal', 'Three levels', 'Light keeps print quality, Recommended is right for e-mail and portals, Strong squeezes scans to the minimum.'],
@@ -43,11 +43,11 @@ export default {
     zh: {
       name: 'PDF 压缩',
       short: '重新压缩 PDF 里的图片来减小体积，文字依然清晰。',
-      keywords: ['pdf 压缩', '减小 pdf 大小', 'pdf 变小', 'pdf 文件太大', '压缩 pdf 文件'],
-      title: 'PDF 压缩 — 在线免费减小 PDF 文件大小，文字依然清晰（不上传）',
+      keywords: ['pdf 压缩', '减小 pdf 大小', 'pdf 变小', 'pdf 文件太大', '压缩 pdf 文件', 'pdf 太大怎么压缩', '在线压缩 pdf'],
+      title: 'PDF 压缩 — 在线减小 PDF 文件大小，文字清晰（不上传）',
       desc: '通过重新压缩 PDF 中的照片和扫描图来减小文件大小，文字保持清晰可选。三种压缩强度，显示压缩前后大小。免费、私密，在浏览器中完成，不上传。',
       h1: 'PDF 压缩：减小文件大小',
-      sub: '大多数 PDF 之所以大，是因为里面的图片。LocalKit 会缩小并重新压缩这些图片，而文字、字体和矢量图形保持不变，文档依然清晰、可搜索。',
+      sub: 'PDF 压缩是一个免费的在线工具：大多数 PDF 之所以大，是因为里面的图片。LocalKit 缩小并重新压缩这些图片，文字和矢量图形保持不变，文档依然清晰、可搜索，全程不上传。',
       features: [
         ['image-down', '只压缩图片', '照片和扫描页会被缩小并重新压缩；文字和矢量图形保持矢量，可以选中复制。'],
         ['sliders-horizontal', '三种强度', '「轻度」保留打印质量，「推荐」适合邮件和网站上传，「强力」把扫描件压到最小。'],

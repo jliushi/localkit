@@ -11,11 +11,11 @@ export default {
     en: {
       name: 'Rotate & Organize PDF',
       short: 'Rotate, delete and reorder PDF pages with drag and drop.',
-      keywords: ['rotate pdf', 'delete pdf pages', 'reorder pdf', 'rearrange pdf', 'remove pages from pdf', 'organize pdf'],
-      title: 'Rotate PDF, Delete & Reorder Pages Online Free (No Upload)',
-      desc: 'Rotate PDF pages, delete pages and drag them into a new order — with page thumbnails. Select several pages for bulk actions, add pages from another PDF, and save. Free, private, in your browser.',
+      keywords: ['rotate pdf', 'delete pdf pages', 'reorder pdf', 'rearrange pdf', 'remove pages from pdf', 'organize pdf', 'flip pdf'],
+      title: 'Rotate PDF & Delete or Reorder Pages — Free Online, No Upload',
+      desc: 'Rotate, delete and reorder PDF pages with drag-and-drop page thumbnails. Bulk-select pages, append another PDF, and save. Free, private — runs in your browser.',
       h1: 'Rotate, delete and reorder PDF pages',
-      sub: 'Fix sideways scans, remove blank or unwanted pages, and drag pages into the right order. Select several pages to rotate or delete them together, then save a clean new PDF.',
+      sub: 'This PDF organizer fixes page problems without uploading anything: straighten sideways scans, remove blank or unwanted pages, and drag pages into the right order with live thumbnails, then save a clean new PDF.',
       features: [
         ['rotate-cw', 'Rotate single or all pages', 'Turn pages left or right one by one, rotate a selection, or rotate the whole document. The rotation is saved in the file.'],
         ['grip-vertical', 'Drag and drop order', 'Drag thumbnails to rearrange pages, or use the arrow buttons. Add pages from another PDF at the end.'],
@@ -51,7 +51,7 @@ export default {
       title: 'PDF 旋转、删除页面、调整顺序 — 在线免费（不上传）',
       desc: '旋转 PDF 页面、删除页面、拖动调整页面顺序 —— 带页面缩略图。可多选批量操作，可追加另一个 PDF 的页面，然后保存。免费、私密，在浏览器中完成。',
       h1: '旋转、删除和调整 PDF 页面顺序',
-      sub: '把扫描歪了的页面转正，删掉空白或不需要的页面，拖动页面排好顺序。可以同时选中多页一起旋转或删除，然后保存为新的 PDF。',
+      sub: '这是一个免费的在线 PDF 页面整理工具：把扫描歪了的页面旋转转正，删除空白或不需要的页面，拖动排序。可批量选中，保存为新的 PDF，全程不上传。',
       features: [
         ['rotate-cw', '单页或整份旋转', '逐页向左或向右旋转，也可以旋转选中的页面或整份文档。旋转方向会保存在文件中。'],
         ['grip-vertical', '拖放排序', '拖动缩略图调整页面顺序，或使用箭头按钮；还可以在末尾追加另一个 PDF 的页面。'],

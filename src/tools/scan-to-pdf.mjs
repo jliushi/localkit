@@ -12,10 +12,10 @@ export default {
       name: 'Scan to PDF',
       short: 'Turn phone photos of documents into a clean, straight scanned PDF.',
       keywords: ['document scanner', 'scan document', 'phone scanner', 'camera scanner', 'photo to scan', 'receipt scanner'],
-      title: 'Scan to PDF Online — Free Document Scanner for Phone Photos (No App, No Upload)',
-      desc: 'Free online document scanner: take photos of paper documents, receipts or notes and get a clean PDF. Automatic edge detection, perspective correction and scan filters (black & white, enhanced color). No app, no upload.',
+      title: 'Scan to PDF — Free Online Document Scanner, No App, No Upload',
+      desc: 'Free online document scanner: photograph documents, receipts or notes and get a clean PDF. Auto edge detection, perspective correction, scan filters. No upload.',
       h1: 'Scan documents to PDF with your phone',
-      sub: 'Photograph a document, receipt or whiteboard — LocalKit finds the page edges, straightens it, cleans up shadows and saves a crisp PDF. No app to install, and your photos never leave your device.',
+      sub: 'Scan to PDF is a free document scanner that works in your browser: photograph a document, receipt or whiteboard and LocalKit finds the page edges, straightens it, cleans up shadows and saves a crisp PDF. No app to install — photos never leave your device.',
       features: [
         ['scan', 'Automatic page detection', 'The edges of the paper are found automatically and the page is straightened, even if you took the photo at an angle.'],
         ['wand-sparkles', 'Scanner filters', 'Enhanced colour, clean black & white (removes shadows) or grayscale — make a quick photo look like a flatbed scan.'],
@@ -23,7 +23,7 @@ export default {
       ],
       howToTitle: 'How to scan a document to PDF',
       steps: [
-        'On your phone, tap "Take photo" (or drop existing photos on a computer).',
+        'On your phone, tap the Take photo button (or drop existing photos on a computer).',
         'Check each page: tap Crop to adjust the corners if needed, and pick a filter.',
         'Add more pages, then press Create PDF.',
       ],
@@ -32,7 +32,7 @@ export default {
         ['Which filter should I use?', { table: [['Filter', 'Best for'], ['Enhanced', 'Most documents: brighter paper, stronger text, colours kept'], ['Black & white', 'Text-only pages, forms, contracts — smallest files, shadows removed'], ['Grayscale', 'Documents with pencil or photos where colour doesn\'t matter'], ['Original', 'Keep the photo exactly as taken']] }],
       ],
       faq: [
-        ['Do I need to install a scanner app?', 'No. This page works in the browser on iPhone and Android: tap "Take photo" to use the camera.'],
+        ['Do I need to install a scanner app?', 'No. This page works in the browser on iPhone and Android: tap the Take photo button to use the camera.'],
         ['How does the automatic cropping work?', 'LocalKit looks for the bright rectangle of the paper against the background and moves the four corners onto it. You can always drag the corners yourself.'],
         ['Can I scan multiple pages into one PDF?', 'Yes. Keep adding photos; each becomes a page. Drag to reorder before creating the PDF.'],
         ['Is the result searchable text?', 'The PDF contains images of the pages (like any scanner). Text recognition (OCR) is not included.'],
@@ -54,7 +54,7 @@ export default {
       title: '在线扫描成 PDF — 手机拍照变扫描件，免费免安装（不上传）',
       desc: '免费在线文档扫描：拍下纸质文件、收据或笔记，得到干净的 PDF。自动识别边缘、透视校正，提供黑白、增强等扫描滤镜。无需安装 App，不上传。',
       h1: '用手机把文件扫描成 PDF',
-      sub: '给文件、收据或白板拍张照 —— LocalKit 会自动找到纸张边缘、把页面拉正、去除阴影，保存为清晰的 PDF。无需安装 App，照片不会离开你的设备。',
+      sub: '扫描成 PDF 是一个免费的在线文档扫描仪：给文件、收据或白板拍张照，自动找到纸张边缘、拉正页面、去除阴影，保存为清晰的 PDF。无需安装 App，照片不会离开你的设备。',
       features: [
         ['scan', '自动识别页面', '自动找到纸张的边缘并把页面拉正，即使拍照时有角度也没关系。'],
         ['wand-sparkles', '扫描滤镜', '增强彩色、干净的黑白（去除阴影）或灰度 —— 让随手拍的照片看起来像平板扫描仪扫的一样。'],

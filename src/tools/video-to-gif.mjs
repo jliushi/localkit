@@ -10,11 +10,11 @@ export default {
     en: {
       name: 'Video to GIF',
       short: 'Turn a clip from any video into a looping animated GIF.',
-      keywords: ['gif maker', 'mp4 to gif', 'animated gif', 'make gif', 'meme'],
-      title: 'Video to GIF Converter — Make Animated GIFs from MP4/MOV Free, No Upload',
-      desc: 'Make an animated GIF from any video: pick the moment on the filmstrip, choose size, frame rate and speed, and download. MP4, MOV, WebM to GIF in your browser — free, no watermark, no upload.',
+      keywords: ['gif maker', 'mp4 to gif', 'animated gif', 'make gif', 'meme', 'mov to gif', 'gif converter'],
+      title: 'Video to GIF Converter — Make GIFs from MP4/MOV, No Upload',
+      desc: 'Turn a video clip into an animated GIF: pick the moment, set size, frame rate and speed, and download. All in your browser — free, no watermark, no upload.',
       h1: 'Video to GIF — make an animated GIF from a video',
-      sub: 'Choose the moment on the filmstrip, set the size and smoothness, and get a looping GIF for chats, docs or memes. Frames are rendered on your device; nothing is uploaded.',
+      sub: 'Video to GIF turns a clip of any video into a looping animated GIF: pick the moment on the filmstrip, set the size and smoothness, and download a GIF for chats, docs or memes — rendered on your device, nothing uploaded, no watermark.',
       features: [
         ['film', 'Pick the exact moment', 'Drag the handles over the frames you want (up to 30 seconds) and play the selection to check it.'],
         ['sliders-horizontal', 'Size, smoothness, speed', 'Choose the width, frames per second, playback speed and whether the GIF loops forever or plays once.'],
@@ -52,7 +52,7 @@ export default {
       title: '视频转 GIF — 在线把 MP4/MOV 做成动图，免费不上传',
       desc: '把任意视频做成 GIF 动图：在缩略图时间轴上选好片段，设置尺寸、帧率和速度，直接下载。MP4、MOV、WebM 转 GIF 在浏览器中完成 —— 免费、无水印、不上传。',
       h1: '视频转 GIF：把视频做成动图',
-      sub: '在时间轴上选好片段，设置尺寸和流畅度，就能得到可以循环播放的 GIF，用于聊天、文档或表情包。帧在你的设备上渲染，不上传任何内容。',
+      sub: '视频转 GIF 是一个免费的在线 GIF 制作工具：在时间轴上选好片段，设置尺寸和流畅度，就能下载循环播放的 GIF，用于聊天、文档或表情包。帧在你的设备上渲染，不上传，也没有水印。',
       features: [
         ['film', '精确选择片段', '拖动手柄选中想要的画面（最长 30 秒），可以播放选中片段确认效果。'],
         ['sliders-horizontal', '尺寸、流畅度、速度', '可选择宽度、每秒帧数、播放速度，以及循环播放还是只播一次。'],

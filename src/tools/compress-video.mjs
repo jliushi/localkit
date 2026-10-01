@@ -10,11 +10,11 @@ export default {
     en: {
       name: 'Compress Video',
       short: 'Shrink MP4, MOV and other videos to a target size, keeping good quality.',
-      keywords: ['reduce video size', 'video compressor', 'mp4', 'mov', 'smaller', 'email', 'discord'],
-      title: 'Compress Video Online Free — Reduce MP4/MOV Size to 10 MB, 25 MB… (No Upload)',
-      desc: 'Free online video compressor: pick a target size like 10 MB or 25 MB and get the best quality that fits. Works with MP4, MOV, MKV, WebM. Fast hardware encoding in your browser — no upload, no watermark.',
+      keywords: ['reduce video size', 'video compressor', 'mp4', 'mov', 'smaller', 'email', 'discord', 'whatsapp', 'make video smaller', 'compress mp4'],
+      title: 'Compress Video Online Free — MP4/MOV to 10/25 MB, No Upload',
+      desc: 'Free video compressor: target a size like 10 MB or 25 MB, with the best quality that fits. MP4, MOV, MKV, WebM — hardware encoding, no upload, no watermark.',
       h1: 'Compress video to a smaller file size',
-      sub: 'Choose how big the file may be — 10 MB for Discord, 25 MB for e-mail — and get the sharpest video that fits. Compression runs on your device with hardware encoding, so it is fast and nothing is uploaded.',
+      sub: 'Compress Video is a free online video compressor: drop an MP4 or MOV, choose a target size like 10 MB for Discord or 25 MB for e-mail, and get the sharpest video that fits. It runs with hardware encoding on your own device — fast, and nothing is uploaded.',
       features: [
         ['target', 'Hit an exact size', 'Pick a preset or type any size in MB. The bitrate and resolution are calculated so the result lands just under your limit.'],
         ['zap', 'Hardware-fast', 'Uses your graphics chip\'s H.264 encoder through WebCodecs. A one-minute 1080p phone video usually compresses in under a minute.'],
@@ -53,11 +53,11 @@ export default {
     zh: {
       name: '视频压缩',
       short: '把 MP4、MOV 等视频压缩到指定大小，画质依然清晰。',
-      keywords: ['压缩视频', '视频变小', '减小视频大小', 'mp4', 'mov', '微信', '邮件'],
-      title: '在线视频压缩 — 免费把 MP4/MOV 压缩到 10MB、25MB（不上传）',
-      desc: '免费在线视频压缩：选择目标大小（如 10MB、25MB），自动得到能放下的最好画质。支持 MP4、MOV、MKV、WebM。在浏览器里用硬件加速压缩，不上传、无水印。',
+      keywords: ['压缩视频', '视频压缩软件', '视频变小', '减小视频大小', 'mp4 压缩', 'mov', '微信', '邮件', '视频太大怎么压缩', '在线压缩视频'],
+      title: '视频压缩 — 在线压缩 MP4/MOV 到 10MB、25MB，免费不上传',
+      desc: '免费在线视频压缩：选择目标大小（如 10MB、25MB），自动得到能放下的最好画质。支持 MP4、MOV、MKV、WebM。硬件加速，在浏览器本地压缩，不上传、无水印。',
       h1: '在线压缩视频，指定文件大小',
-      sub: '选好文件最大能有多大 —— 发邮件 25MB、发 Discord 10MB —— 就能得到能放下的最清晰的视频。压缩在你的设备上用硬件编码完成，速度快，也不会上传任何内容。',
+      sub: '视频压缩是一个免费的在线压缩工具：拖入 MP4 或 MOV，选择一个目标大小 —— 比如发邮件 25MB、发 Discord 10MB —— 就能得到放得下的最清晰的视频。压缩在你的设备上用硬件编码完成，速度快，也不会上传任何内容。',
       features: [
         ['target', '精准控制大小', '选择预设或输入任意 MB 数，自动计算码率和分辨率，让结果刚好低于你的限制。'],
         ['zap', '硬件加速，速度快', '通过 WebCodecs 调用显卡的 H.264 编码器。手机拍的一分钟 1080p 视频通常不到一分钟就能压缩完。'],

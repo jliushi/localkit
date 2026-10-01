@@ -11,11 +11,11 @@ export default {
     en: {
       name: 'PDF to JPG',
       short: 'Turn PDF pages into high-quality JPG or PNG images.',
-      keywords: ['pdf to image', 'pdf to png', 'convert pdf to jpg', 'pdf page to picture', 'extract images'],
-      title: 'PDF to JPG Converter — Convert PDF Pages to JPG or PNG Free (No Upload)',
-      desc: 'Convert PDF pages to JPG or PNG images in high resolution (up to 300 DPI). Pick the pages, preview them and download one image or a ZIP. Free, private — the PDF stays in your browser.',
+      keywords: ['pdf to image', 'pdf to png', 'convert pdf to jpg', 'pdf page to picture', 'extract images', 'pdf to photo'],
+      title: 'PDF to JPG Converter — Pages to JPG/PNG Free, No Upload',
+      desc: 'Convert PDF pages to JPG or PNG images in high resolution (up to 300 DPI). Pick pages, preview and download one image or a ZIP. Free, private — no upload.',
       h1: 'Convert PDF to JPG images',
-      sub: 'Turn every page — or just the ones you pick — into sharp JPG or PNG images for slides, social media, chats or documents. Choose screen or print resolution.',
+      sub: 'PDF to JPG turns every page of a document — or just the pages you pick — into sharp JPG or PNG images for slides, social media, chats or documents. Choose screen or print resolution, up to 300 DPI; the PDF never leaves your browser.',
       features: [
         ['images', 'Pick the pages', 'All pages are selected by default; click thumbnails to choose only the ones you need.'],
         ['scan-eye', 'Screen or print quality', '72 DPI for quick previews, 150 DPI for screens and chat apps, 300 DPI for printing.'],
@@ -43,11 +43,11 @@ export default {
     zh: {
       name: 'PDF 转图片',
       short: '把 PDF 页面转换成高清 JPG 或 PNG 图片。',
-      keywords: ['pdf 转 jpg', 'pdf 转图片', 'pdf 转 png', 'pdf 页面转图片', 'pdf 截图'],
-      title: 'PDF 转 JPG — 在线把 PDF 页面转换成 JPG 或 PNG 图片，免费不上传',
+      keywords: ['pdf 转 jpg', 'pdf 转图片', 'pdf 转 png', 'pdf 页面转图片', 'pdf 截图', 'pdf 导出图片'],
+      title: 'PDF 转 JPG — 在线把 PDF 转高清 JPG/PNG（不上传）',
       desc: '把 PDF 页面转换成高分辨率（最高 300 DPI）的 JPG 或 PNG 图片。可选择页面、预览，下载单张图片或 ZIP。免费、私密 —— PDF 留在你的浏览器里。',
       h1: '把 PDF 转换成 JPG 图片',
-      sub: '把每一页（或你选中的页面）转成清晰的 JPG 或 PNG，方便放进幻灯片、发朋友圈、聊天或插入文档。可选屏幕或打印分辨率。',
+      sub: 'PDF 转图片是一个免费的在线工具：把每一页（或你选中的页面）转成高清 JPG 或 PNG，最高 300 DPI，方便放进幻灯片、聊天、打印或文档。PDF 不上传，在浏览器本地渲染。',
       features: [
         ['images', '自选页面', '默认选中全部页面；点击缩略图可以只保留需要的那几页。'],
         ['scan-eye', '屏幕或打印质量', '72 DPI 用于快速预览，150 DPI 适合屏幕和聊天软件，300 DPI 适合打印。'],

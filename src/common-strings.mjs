@@ -2,10 +2,10 @@
 export const COMMON = {
   en: {
     siteName: 'LocalKit',
-    homeTitle: 'LocalKit — Free Online Video, PDF & Image Tools That Never Upload Your Files',
-    homeDesc: 'Compress and trim videos, convert to MP3 or GIF, generate AI subtitles, merge and edit PDFs, convert HEIC and compress images — free, no sign-up, no watermark. Files are processed in your browser and never uploaded.',
+    homeTitle: 'LocalKit — Free Video, PDF & Image Tools, No Upload, No Sign-up',
+    homeDesc: 'Free online tools to compress video, convert MP4 to MP3/GIF, generate AI subtitles, merge and edit PDF, convert HEIC to JPG and compress images — all in your browser. No upload, no sign-up, no watermark.',
     homeH1: 'Free online tools that never upload your files',
-    homeLead: 'Video, PDF and image tools that run entirely in your browser. Fast, private and free — no sign-up, no watermark, no file-size limits.',
+    homeLead: 'LocalKit is a free online toolbox that compresses video, converts MP4 to MP3 or GIF, generates AI subtitles, merges and edits PDFs and converts images — entirely in your browser, with no upload, no sign-up, no watermark and no file-size limits.',
     homeSearch: 'Search tools, e.g. "compress video"',
     noMatch: 'No tool matches "$1".',
     trust: ['Files never leave your device', 'No sign-up', 'No watermark', 'Free, no limits'],
@@ -65,10 +65,10 @@ export const COMMON = {
   },
   zh: {
     siteName: 'LocalKit 本地工具箱',
-    homeTitle: 'LocalKit 本地工具箱 — 免费在线视频、PDF、图片工具，文件不上传',
-    homeDesc: '在线压缩和剪辑视频、视频转 MP3 和 GIF、AI 生成字幕、合并编辑 PDF、HEIC 转 JPG、压缩图片 —— 免费、免注册、无水印。文件在浏览器本地处理，绝不上传。',
+    homeTitle: 'LocalKit 本地工具箱 — 免费视频、PDF、图片在线工具，文件不上传',
+    homeDesc: '免费在线工具：视频压缩、视频转 MP3/GIF、AI 字幕、PDF 合并编辑、PDF 压缩、HEIC 转 JPG、图片压缩转格式等 20 个。文件只在浏览器本地处理，免注册、无水印、不限大小。',
     homeH1: '文件不上传的免费在线工具',
-    homeLead: '视频、PDF、图片工具，全部在你的浏览器里运行。快速、私密、免费 —— 无需注册、没有水印、不限文件大小。',
+    homeLead: 'LocalKit 本地工具箱是一个免费的在线工具集：视频压缩、视频转 MP3、AI 字幕、PDF 合并、图片压缩等 20 个工具，全部在你的浏览器里运行。快速、私密、免费 —— 无需注册、没有水印、不限文件大小。',
     homeSearch: '搜索工具，例如「压缩视频」',
     noMatch: '没有找到与「$1」匹配的工具。',
     trust: ['文件不离开你的设备', '免注册', '无水印', '免费不限次'],

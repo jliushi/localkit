@@ -11,11 +11,11 @@ export default {
     en: {
       name: 'Split PDF',
       short: 'Extract pages or split a PDF into several files.',
-      keywords: ['extract pages', 'separate pdf', 'pdf splitter', 'split pdf pages', 'pdf page range'],
-      title: 'Split PDF Online Free — Extract Pages or Split by Range (No Upload)',
-      desc: 'Split a PDF visually: click the pages to extract, split every page into its own file, cut every N pages, or type ranges like 1-3, 8-10. Free, private, runs in your browser.',
+      keywords: ['extract pages', 'separate pdf', 'pdf splitter', 'split pdf pages', 'pdf page range', 'separate pdf into pages'],
+      title: 'Split PDF Online — Extract or Separate Pages Free, No Upload',
+      desc: 'Split a PDF visually: click pages to extract them, split each page into its own file, cut every N pages or type ranges like 1-3, 8-10. Free — no upload.',
       h1: 'Split a PDF or extract pages',
-      sub: 'See every page as a thumbnail. Click the pages you need to pull them into a new PDF, or split the document into single pages, fixed-size chunks or custom ranges.',
+      sub: 'Split PDF is a free online PDF splitter: open your document, see every page as a thumbnail, and click pages to extract them — or split into single pages, fixed-size chunks or custom ranges like 1-3, 8-10. Nothing is uploaded.',
       features: [
         ['mouse-pointer-click', 'Click to pick pages', 'Select pages straight from thumbnails, or use All / Odd / Even. Shift-click selects a range.'],
         ['split', 'Four ways to split', 'Extract selected pages, split every page, split every N pages, or type ranges such as "1-3, 5, 9-".'],
@@ -52,7 +52,7 @@ export default {
       title: 'PDF 拆分 — 在线免费提取页面或按范围拆分（不上传）',
       desc: '可视化拆分 PDF：点选要提取的页面，或每页拆成一个文件、每 N 页拆一份、按「1-3, 8-10」这样的范围拆分。免费、私密，在浏览器中完成。',
       h1: '拆分 PDF / 提取页面',
-      sub: '每一页都以缩略图显示。点选需要的页面生成新 PDF，或者把文档拆成单页、固定页数的分段或自定义范围。',
+      sub: 'PDF 拆分是一个免费的在线工具：打开 PDF 后，每一页都显示为缩略图，点选需要的页面生成新 PDF，或把文档拆成单页、固定页数的分段和「1-3, 8-10」这样的自定义范围。全程不上传。',
       features: [
         ['mouse-pointer-click', '点选页面', '直接在缩略图上选择页面，也可以一键全选、选奇数页或偶数页；按住 Shift 点击可选择连续范围。'],
         ['split', '四种拆分方式', '提取选中页面、每页拆分、每 N 页拆分，或输入「1-3, 5, 9-」这样的自定义范围。'],
