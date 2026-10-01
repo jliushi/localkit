@@ -1,7 +1,7 @@
 // UI kit shared by every tool. Everything runs locally in the browser.
-import { icon } from './icons.js';
+import { icon, allIcons, iconSync } from './icons.js';
 
-export { icon };
+export { icon, allIcons, iconSync };
 
 const dataEl = document.getElementById('lk-data');
 export const LK = dataEl ? JSON.parse(dataEl.textContent) : { lang: 'en', s: {}, c: {}, base: '' };
@@ -21,6 +21,7 @@ export function el(tag, attrs = {}, ...children) {
   for (const [k, v] of Object.entries(attrs)) {
     if (v == null || v === false) continue;
     if (k === 'text') e.textContent = v;
+    else if (k === 'texts' && Array.isArray(v)) e.textContent = v.filter(Boolean).join(' ');
     else if (k === 'class') e.className = v;
     else if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
     else if (k.startsWith('on') && typeof v === 'function') e.addEventListener(k.slice(2), v);

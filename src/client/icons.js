@@ -33,17 +33,38 @@ import music from 'lucide-static/icons/music.svg';
 import repeat from 'lucide-static/icons/repeat.svg';
 import eye from 'lucide-static/icons/eye.svg';
 import zap from 'lucide-static/icons/zap.svg';
+// A richer set for complex tools (resume builder…). Loaded lazily on demand.
+const EXTRA_NAMES = ['undo-2', 'redo-2', 'bold', 'italic', 'underline', 'strikethrough', 'list', 'link-2', 'palette', 'move-vertical', 'check', 'eye-off', 'type', 'clipboard-list', 'briefcase', 'graduation-cap', 'folder-kanban', 'user-round', 'heart-handshake', 'trophy', 'languages', 'award', 'badge-check', 'message-square-quote', 'star', 'settings-2', 'minimize-2', 'circle-help', 'delete', 'pencil', 'image-plus', 'layout-template', 'wand-sparkles', 'file-plus-2', 'columns-2', 'rows-3', 'chevron-down', 'history', 'circle-plus', 'square-pen'];
+let extraIcons = null;
 
 const ICONS = { upload, download, fileVideo, fileAudio, fileText, image, images, circleCheck, circleAlert, x, rotateCw, rotateCcw, trash, grip, play, pause, scissors, refresh, plus, copy, arrowUp, arrowDown, arrowLeft, arrowRight, merge, split, camera, crop, sparkles, fileImage, music, repeat, eye, zap };
 
-/** Returns a decorative <svg> element. */
-export function icon(name, cls = 'ic') {
+const toSvg = (raw, cls) => {
   const tpl = document.createElement('template');
-  tpl.innerHTML = ICONS[name].replace(/<!--.*?-->/s, '').trim();
+  tpl.innerHTML = raw.replace(/<!--.*?-->/s, '').trim();
   const svg = tpl.content.firstElementChild;
   svg.removeAttribute('width');
   svg.removeAttribute('height');
   svg.setAttribute('class', cls);
   svg.setAttribute('aria-hidden', 'true');
   return svg;
+};
+
+/** Returns a decorative <svg> element. */
+export function icon(name, cls = 'ic') {
+  return toSvg(ICONS[name], cls);
+}
+
+/** Every bundled lucide-static icon, as { name: svgString } (named "lucide" chunks). */
+export async function allIcons() {
+  if (extraIcons) return { ...ICONS, ...extraIcons };
+  const mods = await Promise.all(EXTRA_NAMES.map((n) => import(`lucide-static/icons/${n}.svg`)));
+  extraIcons = Object.fromEntries(EXTRA_NAMES.map((n, i) => [n, mods[i].default]));
+  return { ...ICONS, ...extraIcons };
+}
+
+/** Synchronously renders an extended icon; only call after allIcons() has resolved. */
+export function iconSync(name, cls = 'ic') {
+  const raw = ICONS[name] || extraIcons?.[name];
+  return raw ? toSvg(raw, cls) : toSvg(ICONS.circleAlert, cls);
 }
