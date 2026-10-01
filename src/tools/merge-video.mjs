@@ -12,8 +12,8 @@ export default {
       name: 'Merge Videos',
       short: 'Join multiple clips into one MP4, in the order you choose.',
       keywords: ['merge video', 'combine videos', 'join clips', 'video merger', 'video joiner'],
-      title: 'Merge Videos Online Free — Join MP4 & MOV Clips Into One (No Upload)',
-      desc: 'Combine several video clips into one MP4: drag to reorder, different resolutions and aspect ratios are fitted automatically with black bars. Progress, cancel, instant download. Free, private, no watermark.',
+      title: 'Merge Videos Online Free — Join Clips Into One MP4',
+      desc: 'Combine several video clips into one MP4: drag to reorder, mixed resolutions and aspect ratios are fitted with black bars. Free, private, no watermark.',
       h1: 'Merge videos into one clip',
       sub: 'Drop your clips, put them in order and press Merge. Clips of different sizes and orientations are fitted into one frame without stretching, and video without sound keeps its place silently. Nothing is uploaded.',
       features: [
@@ -59,7 +59,7 @@ export default {
       short: '把多个视频片段按顺序合并成一个 MP4。',
       keywords: ['合并视频', '视频拼接', '多段视频合成', '视频合并工具', 'mp4 合并'],
       title: '视频合并 — 在线免费把多个视频拼接成一个 MP4（不上传）',
-      desc: '把多段视频合并成一个 MP4：拖动排序，不同分辨率和横竖屏会自动加黑边适配，绝不拉伸。有进度、可取消、直接下载。免费、私密、无水印。',
+      desc: '把多段视频合并成一个 MP4：拖动排序，不同分辨率和横竖屏会自动加黑边适配，绝不拉伸。有进度条、可随时取消，合并后直接下载。免费、无水印，视频不会上传，全程在浏览器本地完成。',
       h1: '把多个视频合并成一个',
       sub: '拖入视频片段，调整好顺序，点击合并。不同尺寸、不同横竖屏的片段会自动适配到同一个画面，绝不拉伸变形；没有声音的片段会保持静音。整个过程不上传任何文件。',
       features: [

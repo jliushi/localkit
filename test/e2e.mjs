@@ -110,6 +110,22 @@ await test('merge-video:3clips+mixedres+silent', async () => {
   return page;
 });
 
+await test('merge-video:720p-preset-portrait-first', async () => {
+  const page = await open('/merge-video/');
+  await upload(page, '#mv-pick', ['merge-b-portrait.mp4', 'merge-c-silent.mp4']);
+  await page.waitForFunction(() => [...document.querySelectorAll('#mv-list .meta')].length === 2
+    && [...document.querySelectorAll('#mv-list .meta')].every((m) => /\d+:\d+/.test(m.innerText)), { timeout: 30000 });
+  await page.select('#mv-size', '1280x720');
+  await page.click('#mv-go');
+  await page.waitForSelector('#mv-result .result', { timeout: 180000 });
+  await page.click('#mv-result .btn.lg');
+  const info = probe(await waitDownload(page));
+  const v = info.streams.find((s) => s.codec_type === 'video');
+  assert(v.width === 1280 && v.height === 720, `${v.width}x${v.height}`);
+  assert(info.streams.some((s) => s.codec_type === 'audio'), 'no audio stream');
+  return page;
+});
+
 await test('compress-video:target', async () => {
   const page = await open('/compress-video/');
   await upload(page, '#cv-pick', ['phone-1080p.mp4']);
