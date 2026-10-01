@@ -420,16 +420,14 @@ $('#as-trgo').addEventListener('click', async () => {
   $('#as-trgo').disabled = true;
   const task = progress($('#as-tr-task'), { title: t('trWorking'), onCancel: () => trJob?.cancel() });
   try {
-    trJob = translate(segs.map((x) => x.text.replace(/
-/g, ' ')), src, dst, (ev) => {
+    trJob = translate(segs.map((x) => x.text.replace(/\n/g, ' ')), src, dst, (ev) => {
       if (ev.type === 'download') { task.title(t('trLoading', fmtBytes(ev.loaded), fmtBytes(ev.total))); task.set(ev.loaded / ev.total); }
       else if (ev.type === 'ready') task.title(t('trWorking'));
       else if (ev.type === 'progress') task.set(ev.value);
     });
     const out = await trJob.promise;
     const bi = $('#as-trbi').checked;
-    segs = segs.map((x, i) => ({ ...x, text: bi ? `${x.text}
-${out[i]}` : out[i] }));
+    segs = segs.map((x, i) => ({ ...x, text: bi ? `${x.text}\n${out[i]}` : out[i] }));
     renderList();
     $('#as-tr-task').replaceChildren(alertBox(t('trDone'), 'info'));
   } catch (e) {

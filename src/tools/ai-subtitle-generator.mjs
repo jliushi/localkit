@@ -64,6 +64,7 @@ export default {
         exportTitle: 'Download subtitles', srt: 'SRT', vtt: 'VTT', txt: 'Text',
         burnTitle: 'Burn subtitles into the video', size: 'Text size', sizeS: 'Small', sizeM: 'Medium', sizeL: 'Large', style: 'Style', styleOutline: 'Outline', styleBox: 'Box', position: 'Position', posBottom: 'Bottom', posTop: 'Top',
         burn: 'Burn into video (MP4)', burning: 'Rendering the video with subtitles…', burned: 'Video with subtitles is ready · $1', downloadVideo: 'Download video', audioOnly: 'This is an audio file, so subtitles can\'t be burned in. Download the SRT instead.',
+        trTitle: 'Translate', trTo: 'Translate to', trBi: 'Keep original (bilingual)', trGo: 'Translate subtitles', trLoading: 'Downloading the translation model (first time only) · $1 / $2', trWorking: 'Translating…', trDone: 'Subtitles translated.', trSame: 'The subtitles are already in that language.',
         badSrt: 'That file doesn\'t look like SRT or VTT subtitles.', imported: '$1 subtitles imported.', another: 'Use another file', newText: 'New subtitle',
       },
     },

@@ -376,7 +376,7 @@ async function main() {
 ${LANGS.flatMap((lang) => unique.map((u) => `<url><loc>${absUrl(`/${lang}${u.path}`)}</loc><lastmod>${TODAY}</lastmod><priority>${u.priority}</priority><xhtml:link rel="alternate" hreflang="en" href="${absUrl(`/en${u.path}`)}"/><xhtml:link rel="alternate" hreflang="zh-CN" href="${absUrl(`/zh${u.path}`)}"/><xhtml:link rel="alternate" hreflang="x-default" href="${absUrl(`/en${u.path}`)}"/></url>`)).join('\n')}
 </urlset>
 `);
-  write('robots.txt', `User-agent: *\nAllow: /\n\nContent-signal: search=yes, ai-train=no, ai-input=yes\n\nSitemap: ${absUrl('/sitemap.xml')}\n`);
+  write('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${absUrl('/sitemap.xml')}\n`);
   write('llms.txt', llmsTxt(tools));
   write(`${INDEXNOW_KEY}.txt`, INDEXNOW_KEY);
   write('urls.txt', LANGS.flatMap((lang) => unique.map((u) => absUrl(`/${lang}${u.path}`))).join('\n') + '\n');
