@@ -332,6 +332,20 @@ function vendor() {
   for (const f of fs.readdirSync(path.join(nm, 'pdfjs-dist/standard_fonts'))) copy(path.join(nm, 'pdfjs-dist/standard_fonts', f), `vendor/pdfjs/standard_fonts/${f}`);
 }
 
+/** Noto Sans SC (OFL) slices for embedding CJK text into edited PDFs; loaded lazily by the editor. */
+function notoSlices() {
+  const dir = path.join(ROOT, 'node_modules/@fontsource/noto-sans-sc');
+  const css = fs.readFileSync(path.join(dir, '400.css'), 'utf8');
+  const slices = [];
+  for (const m of css.matchAll(/url\(\.\/files\/(noto-sans-sc-[^)]*?-400-normal\.woff2)\)[^}]*?unicode-range:\s*([^;]+);/g)) {
+    const ranges = m[2].split(',').map((r) => r.trim().replace(/^U\+/i, '').split('-').map((h) => parseInt(h, 16))).map(([x, y]) => [x, y ?? x]);
+    slices.push([m[1], ranges]);
+    copy(path.join(dir, 'files', m[1]), `vendor/fonts/notosc/${m[1]}`);
+  }
+  write('vendor/fonts/notosc/index.json', JSON.stringify(slices));
+  copy(path.join(dir, 'LICENSE'), 'vendor/fonts/notosc/LICENSE');
+}
+
 function copyDir(src, rel) {
   if (!fs.existsSync(src)) return;
   for (const f of fs.readdirSync(src, { withFileTypes: true })) {
@@ -346,6 +360,7 @@ async function main() {
   fs.rmSync(DIST, { recursive: true, force: true });
   await bundle(tools);
   vendor();
+  notoSlices();
   copyDir(path.join(ROOT, 'src/assets'), 'assets');
   const hash = crypto.createHash('sha256');
   hash.update(fs.readFileSync(path.join(ROOT, 'src/assets/style.css')));
