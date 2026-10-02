@@ -75,7 +75,7 @@ async function clickSettled(page, sel) {
 
 async function test(name, fn) {
   if (only && !only.has(name.split(':')[0])) return;
-  if (args['skip-ai'] && name.startsWith('ai-')) return;
+  if (args['skip-ai'] && /^(ai-|remove-background)/.test(name)) return; // these download hundreds of MB of model files
   const started = Date.now();
   let page;
   lastPage = null;
@@ -811,6 +811,50 @@ await test('compress-image:batch+target', async () => {
   assert((await waitDownload(page)) === 'compressed-images.zip', 'zip');
   const sizes = await page.$$eval('#ci-grid .sizes', (x) => x.map((e) => e.innerText));
   assert(sizes.every((s) => /→ (\d{1,2}|100) KB|→ \d{2,3} B/.test(s)), `sizes ${sizes}`);
+  return page;
+});
+
+// Decodes a downloaded image to RGBA with ffmpeg: { w, h, px(x, y) → [r, g, b, a] }.
+function rgbaOf(file) {
+  const { width: w, height: h } = probe(file).streams[0];
+  const buf = execFileSync('ffmpeg', ['-v', 'error', '-i', outFile(file), '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'], { maxBuffer: 1 << 28 });
+  return { w, h, px: (x, y) => [...buf.subarray((y * w + x) * 4, (y * w + x) * 4 + 4)] };
+}
+
+await test('remove-background:birefnet-transparent', async () => {
+  const page = await open('/remove-background/');
+  await upload(page, '#rb-pick', ['portrait.jpg']);
+  await page.waitForSelector('#rb-grid .rb-view', { timeout: 600000 });
+  await page.click('#rb-grid .actions .btn');
+  const name = await waitDownload(page);
+  assert(name === 'portrait-no-bg.png', name);
+  const img = rgbaOf(name);
+  assert(img.w === 640 && img.h === 800, `size ${img.w}x${img.h}`);
+  const fx = (f) => Math.round(f * (img.w - 1)), fy = (f) => Math.round(f * (img.h - 1));
+  // corners and the moon behind the astronaut are background; the face and the chest are the subject
+  for (const [x, y] of [[0.03, 0.03], [0.97, 0.03], [0.03, 0.4], [0.2, 0.25]]) assert(img.px(fx(x), fy(y))[3] < 40, `background at ${x},${y} should be transparent: ${img.px(fx(x), fy(y))}`);
+  for (const [x, y] of [[0.62, 0.3], [0.7, 0.62], [0.75, 0.85]]) assert(img.px(fx(x), fy(y))[3] > 240, `subject at ${x},${y} should be opaque: ${img.px(fx(x), fy(y))}`);
+  const slider = await page.$('#rb-grid .rb-slider');
+  assert(slider, 'before/after slider');
+  return page;
+});
+
+await test('remove-background:modnet-blue-jpg-zh', async () => {
+  const page = await open('/remove-background/', 'zh');
+  await page.click('#rb-pick .sample');
+  await page.waitForSelector('#rb-work:not([hidden])');
+  await page.click('input[name="rb-m"][value="modnet"] + span');
+  await page.click('input[name="rb-bg"][value="#438edb"] + span');
+  await page.click('input[name="rb-f"][value="jpg"] + span');
+  await page.waitForFunction(() => document.querySelectorAll('#rb-grid .rb-view').length === 1, { timeout: 300000 });
+  await page.click('#rb-grid .actions .btn');
+  const name = await waitDownload(page);
+  assert(name === 'portrait-no-bg.jpg' && probe(name).streams[0].codec_name === 'mjpeg', name);
+  const img = rgbaOf(name);
+  const [r, g, b] = img.px(5, 5);
+  assert(Math.abs(r - 0x43) < 12 && Math.abs(g - 0x8e) < 12 && Math.abs(b - 0xdb) < 12, `corner should be ID-photo blue: ${r},${g},${b}`);
+  const [r2, g2, b2] = img.px(Math.round(img.w * 0.7), Math.round(img.h * 0.62));
+  assert(r2 > 150 && g2 > 150, `suit should stay white-ish: ${r2},${g2},${b2}`);
   return page;
 });
 
