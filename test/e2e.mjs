@@ -36,9 +36,19 @@ async function open(p, lang = 'en', width = 1280) {
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource.*(favicon|404)/.test(m.text())) page.errors.push(m.text()); });
   await page.setViewport({ width, height: 900 });
   const client = await page.createCDPSession();
-  await client.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: OUT, eventsEnabled: true });
+  // Save by GUID and wait for Chrome's completion event. A stale file with the suggested name
+  // (or Chrome choosing a numbered filename) must never make an unfinished export pass a test.
+  await client.send('Browser.setDownloadBehavior', { behavior: 'allowAndName', downloadPath: OUT, eventsEnabled: true });
   page.downloads = [];
-  client.on('Browser.downloadWillBegin', (e) => page.downloads.push(e.suggestedFilename));
+  page.downloadJobs = [];
+  client.on('Browser.downloadWillBegin', (e) => {
+    page.downloads.push(e.suggestedFilename);
+    page.downloadJobs.push({ guid: e.guid, name: path.basename(e.suggestedFilename), state: 'inProgress' });
+  });
+  client.on('Browser.downloadProgress', (e) => {
+    const job = page.downloadJobs.find((item) => item.guid === e.guid);
+    if (job) job.state = e.state;
+  });
   await page.goto(`${BASE}/${lang}${p}`, { waitUntil: 'networkidle0' });
   return page;
 }
@@ -49,10 +59,18 @@ async function waitDownload(page, n = 1, timeout = 30000) {
   const end = Date.now() + timeout;
   while (page.downloads.length < n && Date.now() < end) await sleep(200);
   assert(page.downloads.length >= n, `expected ${n} downloads, got ${page.downloads.length}`);
-  const name = page.downloads[n - 1];
-  for (let i = 0; i < 50 && !fs.existsSync(outFile(name)); i++) await sleep(200);
-  await sleep(300);
-  return name;
+  const job = page.downloadJobs[n - 1];
+  while (job.state === 'inProgress' && Date.now() < end) await sleep(100);
+  assert(job.state === 'completed', `download ${job.name}: ${job.state}`);
+  if (!job.saved) {
+    const source = outFile(job.guid);
+    while (!fs.existsSync(source) && Date.now() < end) await sleep(100);
+    assert(fs.existsSync(source), `completed download missing: ${job.name}`);
+    fs.copyFileSync(source, outFile(job.name));
+    fs.unlinkSync(source);
+    job.saved = true;
+  }
+  return job.name;
 }
 
 // Result panels scroll themselves into view (smooth) and the main thread can stall while the first <video>/<canvas>
@@ -91,6 +109,8 @@ async function test(name, fn) {
   } finally {
     if (page) await page.close().catch(() => {});
     if (lastPage) await lastPage.close().catch(() => {});
+    const [testName, result, elapsed] = results.at(-1);
+    console.log(`${result === 'PASS' ? '✓' : '✗'} ${testName.padEnd(42)} ${result === 'PASS' ? '' : result} ${(elapsed / 1000).toFixed(1)}s`);
   }
 }
 
@@ -1070,10 +1090,6 @@ await test('base64:live+file', async () => {
 });
 
 await browser.close();
-let failed = 0;
-for (const [name, res, ms] of results) {
-  if (res !== 'PASS') failed++;
-  console.log(`${res === 'PASS' ? '✓' : '✗'} ${name.padEnd(42)} ${res === 'PASS' ? '' : res} ${(ms / 1000).toFixed(1)}s`);
-}
+const failed = results.filter(([, result]) => result !== 'PASS').length;
 console.log(`${results.length - failed}/${results.length} passed`);
 process.exit(failed ? 1 : 0);
