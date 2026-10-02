@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { transformSync } from 'esbuild';
 import { BASE_PATH, SITE_ORIGIN, LANGS, absUrl, INDEXNOW_KEY } from '../site.config.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -10,6 +11,11 @@ const dist = path.join(root, 'dist');
 const problems = [];
 const check = (ok, message) => { if (!ok) problems.push(message); };
 const read = (rel) => fs.readFileSync(path.join(dist, rel), 'utf8');
+// CSS is copied rather than bundled. An unclosed media query can silently disable all later desktop styles.
+try {
+  const css = transformSync(read('assets/style.css'), { loader: 'css', logLevel: 'silent' });
+  for (const warning of css.warnings) problems.push(`style.css:${warning.location?.line}: ${warning.text}`);
+} catch (error) { problems.push(`style.css: ${error.message}`); }
 const decode = (s) => s.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 const attrs = (tag) => Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/g)].map((m) => [m[1], decode(m[2])]));
 const tools = await Promise.all(fs.readdirSync(path.join(root, 'src/tools')).filter((f) => f.endsWith('.mjs'))
