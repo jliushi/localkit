@@ -53,7 +53,7 @@ export default {
         tSign: 'Sign', tDate: 'Date', tCheck: 'Check', tImage: 'Image', tWhite: 'White-out',
         font: 'Font', fSans: 'Sans-serif', fSerif: 'Serif', fMono: 'Monospace', fCjk: 'Chinese / Unicode', size: 'Size', color: 'Colour', width: 'Stroke', bold: 'Bold', italic: 'Italic', alignL: 'Align left', alignC: 'Align centre', alignR: 'Align right',
         undo: 'Undo', redo: 'Redo', zoomIn: 'Zoom in', zoomOut: 'Zoom out', fitWidth: 'Fit width', panel: 'Pages', save: 'Save PDF', saving: 'Saving…', dup: 'Duplicate', delSel: 'Delete selected',
-        addPage: 'Add blank page', rotate: 'Rotate page', dupPage: 'Duplicate page', moveUp: 'Move up', moveDown: 'Move down', delPage: 'Delete page', pageCount: '$1 pages',
+        addPage: 'Add blank page', rotate: 'Rotate page', dupPage: 'Duplicate page', moveUp: 'Move up', moveDown: 'Move down', delPage: 'Delete page', pageCount: 'Pages: $1',
         hintSelect: 'Click an item to select it; Shift-click to select several, drag an empty area to select many. Drag to move, use the corner handle to resize, arrow keys to nudge.',
         hintEdit: 'Click a line of text in the PDF to edit it in place. Fonts are replaced by the closest standard font. Scanned pages cannot be edited.',
         hintText: 'Click on the page to add a text box. Drag its right-hand handle to set the width and wrap lines.',

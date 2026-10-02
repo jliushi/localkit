@@ -15,7 +15,7 @@ function sliceFor(ch) {
   for (const m of css.matchAll(/url\(\.\/files\/(noto-sans-sc-[^)]*?-400-normal\.woff2)\)[^}]*?unicode-range:\s*([^;]+);/g)) {
     for (const r of m[2].split(',')) {
       const [a, b] = r.trim().replace(/^U\+/i, '').split('-').map((h) => parseInt(h, 16));
-      if (cp >= a && cp <= (b ?? a)) return path.join(NOTO, 'files', m[1]);
+      if (cp >= a && cp <= (b ?? a)) return path.join(NOTO, 'files', m[1].replace('.woff2', '.woff'));
     }
   }
   throw new Error(`no slice for ${ch}`);

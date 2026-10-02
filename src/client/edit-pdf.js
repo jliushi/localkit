@@ -1,7 +1,7 @@
 import { $, $$, t, el, filePicker, progress, alertBox, errorText, download, fmtBytes, baseName, icon, toast } from './lib.js';
 import { openForRender, openForEdit, readBytes, pdfBlob, pdflib, closeDoc, renderPage, sortable, move, SAMPLE_PDF } from './pdf-common.js';
 import { pic } from './edit-pdf-icons.js';
-import { extractLines, sampleColors } from './pdf-text.js';
+import { extractLines, sampleColors, showOpTexts } from './pdf-text.js';
 import { buildPdf, BASELINE } from './pdf-edit-save.js';
 
 // ============================================================================ state
@@ -135,7 +135,6 @@ async function load(file) {
   layoutAll();
   setTool('edit');
   updateUndo();
-  $('#pe-count').textContent = '';
   setTimeout(async () => { // after the first pages render: warn when the document has no selectable text
     const l = await ensureLines(views.get(pgs[0].id)).catch(() => null);
     if (l && !l.lines.length && pgs.length === 1) $('#pe-alert').replaceChildren(alertBox(t('noText'), 'info'));
@@ -166,6 +165,7 @@ function makeView(pg) {
   const v = { pg, wrap, inner, layer, canvas: null, near: false, token: 0, lines: null, scale: 1 };
   wrap._view = v;
   inner.addEventListener('pointerdown', (e) => onPageDown(e, v));
+  inner.addEventListener('mousedown', (e) => { if (!e.target.closest('.fl, .ann')) e.preventDefault(); }); // keep the caret where the tool puts it
   inner.addEventListener('pointermove', (e) => onHover(e, v));
   inner.addEventListener('pointerleave', () => hideHover(v));
   io.observe(wrap);
@@ -206,6 +206,7 @@ async function renderView(v, token) {
   if (token !== v.token || !v.near) return;
   if (v.canvas) v.canvas.replaceWith(canvas); else v.inner.prepend(canvas);
   v.canvas = canvas;
+  ensureLines(v).catch(() => {});
   v.scale = vp.width / v.pg.w;
   v.inner.classList.add('rendered');
 }
@@ -393,12 +394,12 @@ function shapeSvg(a, b, s) {
 /** Rebuilds all annotation nodes of one page. */
 function renderAnns(v) {
   const focusId = document.activeElement?.closest?.('.ann')?.dataset.id;
-  for (const n of $$('.ann, .cv', v.layer)) n.remove();
+  for (const n of $$('.ann, .pcv', v.layer)) n.remove();
   const s = S();
   for (const a of anns) {
     if (a.pg !== v.pg.id) continue;
     if (a.cover) {
-      const c = el('div', { class: 'cv' });
+      const c = el('div', { class: 'pcv' });
       Object.assign(c.style, { left: `${a.cover.x * s}px`, top: `${a.cover.y * s}px`, width: `${a.cover.w * s}px`, height: `${a.cover.h * s}px`, background: a.cover.color });
       v.layer.append(c);
     }
@@ -585,7 +586,9 @@ function onPageDown(e, v) {
   const size = defaults.size;
   switch (tool) {
     case 'edit': {
-      ensureLines(v).then(() => { const l = lineAt(v, p); if (l) startEdit(v, l); else select([]); });
+      e.preventDefault();
+      const go = () => { const l = lineAt(v, p); if (l) startEdit(v, l); else select([]); };
+      if (v.lines) go(); else ensureLines(v).then(go);
       break;
     }
     case 'text': case 'date': {
@@ -1148,7 +1151,7 @@ $('#pe-save').addEventListener('click', async () => {
     const vps = new Map(), items = new Map();
     for (const pg of pgs) {
       vps.set(pg.id, viewport(pg));
-      if (anns.some((a) => a.pg === pg.id && a.kill)) items.set(pg.id, (await ensureLines(views.get(pg.id))).strs);
+      if (anns.some((a) => a.pg === pg.id && a.kill)) items.set(pg.id, { strs: (await ensureLines(views.get(pg.id))).strs, ops: await showOpTexts(srcPages[pg.src].page) });
     }
     const flatten = $('#pe-flatten').checked;
     const res = await buildPdf({ bytes, pgs, anns, imgs, vps, items, form: formInfo ? { values: formVals, flatten } : null }, (p) => task.set(p));
@@ -1171,4 +1174,4 @@ $('#pe-save').addEventListener('click', async () => {
 });
 
 // test hook (read-only view of the editor state)
-window.__pe = { get anns() { return anns; }, get pgs() { return pgs; }, get formVals() { return formVals; } };
+window.__pe = { lines: async (i = 0) => (await ensureLines(views.get(pgs[i].id))).lines, get anns() { return anns; }, get pgs() { return pgs; }, get formVals() { return formVals; } };

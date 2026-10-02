@@ -428,7 +428,7 @@ table.diff tr.fold td { background: var(--bg-2); color: var(--muted); text-align
 .ed-pages[data-tool="select"] .epage-in { cursor: default; }
 .ed-pages[data-tool="pen"] .epage-in, .ed-pages[data-tool="hl"] .epage-in, .ed-pages[data-tool="ul"] .epage-in, .ed-pages[data-tool="st"] .epage-in, .ed-pages[data-tool="rect"] .epage-in, .ed-pages[data-tool="ell"] .epage-in, .ed-pages[data-tool="line"] .epage-in, .ed-pages[data-tool="arrow"] .epage-in { touch-action: none; }
 .hoverbox { position: absolute; pointer-events: none; outline: 1.5px dashed #2563eb; background: rgba(37, 99, 235, .08); border-radius: 2px; z-index: 2; }
-.cv { position: absolute; z-index: 1; pointer-events: none; }
+.pcv { position: absolute; z-index: 1; pointer-events: none; }
 .band { position: absolute; border: 1px solid var(--accent-strong); background: rgba(13, 148, 136, .12); z-index: 5; pointer-events: none; }
 .ann { position: absolute; z-index: 3; color: #000; touch-action: none; outline: 1.5px dashed transparent; outline-offset: 1px; }
 .ann:hover { outline-color: rgba(37, 99, 235, .45); }
@@ -564,3 +564,6 @@ dialog h3 { margin-top: 0; }
 .bv-controls { width: 100%; max-width: 760px; }
 #bv-list li { flex-wrap: wrap; }
 #bv-list li.sel { border-color: var(--accent); }
+.pe-side { box-sizing: border-box; width: 100%; }
+.pe-side .btn { width: 100%; justify-content: center; padding-inline: 8px; font-size: .85rem; }
+.pe-thumbs { min-width: 0; }

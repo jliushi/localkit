@@ -94,3 +94,16 @@ export function sampleColors(canvas, scale, box) {
   }
   return { fg: hex(r / n, g / n, b / n), bg: hex(...bg) };
 }
+
+/** Glyph text of every show-text operator on the page, in content-stream order (operators without glyphs are left out). */
+export async function showOpTexts(page) {
+  const lib = await pdfjs();
+  const ol = await page.getOperatorList();
+  const out = [];
+  ol.fnArray.forEach((fn, i) => {
+    if (fn !== lib.OPS.showText && fn !== lib.OPS.showSpacedText) return;
+    const glyphs = (ol.argsArray[i][0] || []).filter((g) => g && typeof g === 'object');
+    if (glyphs.length) out.push(glyphs.map((g) => g.unicode ?? '').join(''));
+  });
+  return out;
+}

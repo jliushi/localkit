@@ -339,8 +339,9 @@ function notoSlices() {
   const slices = [];
   for (const m of css.matchAll(/url\(\.\/files\/(noto-sans-sc-[^)]*?-400-normal\.woff2)\)[^}]*?unicode-range:\s*([^;]+);/g)) {
     const ranges = m[2].split(',').map((r) => r.trim().replace(/^U\+/i, '').split('-').map((h) => parseInt(h, 16))).map(([x, y]) => [x, y ?? x]);
-    slices.push([m[1], ranges]);
-    copy(path.join(dir, 'files', m[1]), `vendor/fonts/notosc/${m[1]}`);
+    const file = m[1].replace('.woff2', '.woff'); // fontkit's woff2 decoder mangles glyph outlines; woff is reliable
+    slices.push([file, ranges]);
+    copy(path.join(dir, 'files', file), `vendor/fonts/notosc/${file}`);
   }
   write('vendor/fonts/notosc/index.json', JSON.stringify(slices));
   copy(path.join(dir, 'LICENSE'), 'vendor/fonts/notosc/LICENSE');

@@ -194,12 +194,32 @@ function findShowOps(src) {
 }
 
 /**
- * Empties the show-text operators of the given text-item ordinals. `items` are the pdf.js text items of the page
- * (non-empty ones, in stream order). Returns true when the content stream was rewritten.
+ * Maps every pdf.js text item to the show-text operators that produced it, by matching the item text with the glyph
+ * text of the operators (pdf.js merges neighbouring operators into one item). Returns null when they do not line up.
  */
-async function scrubText(pdf, lib, page, ordinals, items) {
-  const { PDFName, PDFArray, PDFRawStream, PDFRef, decodePDFRawStream } = lib;
+function mapItemsToOps(strs, opTexts) {
+  const norm = (x) => x.normalize('NFKC').replace(/\s+/g, '');
+  const res = [];
+  let j = 0;
+  for (const str of strs) {
+    const target = norm(str);
+    const idx = [];
+    let acc = '';
+    while (j < opTexts.length && acc.length < target.length) { acc += norm(opTexts[j]); idx.push(j); j++; }
+    if (acc !== target) return null;
+    res.push(idx);
+  }
+  return res;
+}
+
+/**
+ * Empties the show-text operators behind the given text-item ordinals. `info` = { strs, ops } from pdf.js (item texts and
+ * per-operator glyph texts). Returns true when the content stream was rewritten.
+ */
+async function scrubText(pdf, lib, page, ordinals, info) {
+  const { PDFName, PDFArray, PDFRawStream, decodePDFRawStream } = lib;
   try {
+    if (!info) return false;
     const contents = page.node.Contents();
     const streams = [];
     if (contents instanceof PDFArray) for (let i = 0; i < contents.size(); i++) streams.push(contents.lookup(i));
@@ -210,24 +230,19 @@ async function scrubText(pdf, lib, page, ordinals, items) {
     const ops = findShowOps(src);
     if (!ops) return false;
     const real = ops.filter((o) => o.ne);
-    if (real.length !== items.length) return false;
-    for (let k = 0; k < real.length; k++) { // sanity check on plain ASCII literals
-      const raw = real[k].raw;
-      if (raw && !raw.includes('\\') && /^[\x20-\x7e]*$/.test(raw) && /^[\x20-\x7e]*$/.test(items[k])) {
-        if (raw.replace(/\s/g, '') !== items[k].replace(/\s/g, '')) return false;
-      }
-    }
-    const kill = [...ordinals].sort((x, y) => y - x);
+    if (real.length !== info.ops.length) return false; // e.g. text inside form XObjects
+    const map = mapItemsToOps(info.strs, info.ops);
+    if (!map) return false;
+    const kill = new Set();
+    for (const k of ordinals) for (const j of map[k] || []) kill.add(j);
     let out = src;
-    for (const k of kill) {
-      const o = real[k];
-      if (!o) return false;
+    for (const j of [...kill].sort((x, y) => y - x)) {
+      const o = real[j];
       out = out.slice(0, o.from) + (o.kind === 'arr' ? '[]' : '()') + out.slice(o.to);
     }
     const bytes = new Uint8Array(out.length);
     for (let i = 0; i < out.length; i++) bytes[i] = out.charCodeAt(i) & 255;
-    const ref = pdf.context.register(pdf.context.flateStream(bytes));
-    page.node.set(PDFName.of('Contents'), ref);
+    page.node.set(PDFName.of('Contents'), pdf.context.register(pdf.context.flateStream(bytes)));
     return true;
   } catch {
     return false;
@@ -427,7 +442,7 @@ export async function buildPdf(state, onProgress = () => {}) {
     const mine = anns.filter((a) => a.pg === pg.id);
     const ord = new Set();
     for (const a of mine) if (a.kill) for (const k of a.kill) ord.add(k);
-    if (ord.size && pg.src != null) await scrubText(pdf, lib, page, ord, items.get(pg.id) || []);
+    if (ord.size && pg.src != null) await scrubText(pdf, lib, page, ord, items.get(pg.id));
     for (const a of mine) {
       const fn = draw[a.type];
       if (fn) await fn(page, vp, a);
