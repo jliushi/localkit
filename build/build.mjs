@@ -19,7 +19,7 @@ const TODAY = new Date().toISOString().slice(0, 10);
 
 // Order on the home page and in menus.
 const TOOL_ORDER = [
-  'compress-video', 'trim-video', 'video-to-mp3', 'convert-video', 'video-to-gif', 'ai-subtitle-generator', 'merge-video',
+  'compress-video', 'trim-video', 'merge-video', 'video-to-mp3', 'convert-video', 'video-to-gif', 'ai-subtitle-generator',
   'rotate-video', 'crop-video', 'video-speed', 'video-audio', 'remove-silence', 'noise-reduction', 'blur-video', 'translate-subtitles',
   'merge-pdf', 'split-pdf', 'organize-pdf', 'edit-pdf', 'compress-pdf', 'pdf-to-jpg', 'jpg-to-pdf', 'scan-to-pdf',
   'compress-image', 'heic-to-jpg', 'convert-image', 'remove-background', 'image-to-text',

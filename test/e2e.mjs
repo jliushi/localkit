@@ -77,6 +77,55 @@ async function test(name, fn) {
 
 // ================================================================ video & audio
 
+await test('merge-video:3clips+mixedres+silent', async () => {
+  const page = await open('/merge-video/');
+  await upload(page, '#mv-pick', ['merge-a-720p.mp4', 'merge-b-portrait.mp4', 'merge-c-silent.mp4']);
+  await page.waitForFunction(() => [...document.querySelectorAll('#mv-list .meta')].length === 3
+    && [...document.querySelectorAll('#mv-list .meta')].every((m) => /\d+:\d+/.test(m.innerText)), { timeout: 30000 });
+  // Reorder via the "move down" button on the first clip, then back, to exercise the buttons.
+  await page.click('#mv-list li:first-child .pg-tools button:nth-child(2)');
+  await page.waitForFunction(() => document.querySelector('#mv-list li:nth-child(1) .name').innerText.includes('portrait'));
+  await page.click('#mv-list li:nth-child(2) .pg-tools button:nth-child(1)');
+  await page.waitForFunction(() => document.querySelector('#mv-list li:nth-child(1) .name').innerText.includes('720p'));
+  const total = await text(page, '#mv-total');
+  assert(/3/.test(total), `total: ${total}`);
+  await page.click('#mv-go');
+  await page.waitForSelector('#mv-result .result', { timeout: 180000 });
+  await page.click('#mv-result .btn.lg');
+  const name = await waitDownload(page);
+  const info = probe(name);
+  const v = info.streams.filter((s) => s.codec_type === 'video');
+  const a = info.streams.filter((s) => s.codec_type === 'audio');
+  assert(v.length === 1 && a.length === 1, `streams: ${info.streams.map((s) => s.codec_type).join(',')}`);
+  assert(v[0].codec_name === 'h264' && v[0].width === 1280 && v[0].height === 720, `${v[0].codec_name} ${v[0].width}x${v[0].height}`);
+  const d = Number(info.format.duration);
+  assert(Math.abs(d - 7.5) <= 0.5, `duration ${d}`);
+  // Audio must actually cover the whole timeline (the silent clip contributes silence): the last
+  // audio packet should end near the total duration, not stop at 5.5s (the clips that have sound).
+  const lastAudio = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-print_format', 'json', '-show_entries', 'packet=pts_time,duration_time', '-select_streams', 'a', outFile(name)]).toString());
+  const packets = lastAudio.packets || [];
+  assert(packets.length > 5, `audio packets: ${packets.length}`);
+  const end = Number(packets[packets.length - 1].pts_time) + Number(packets[packets.length - 1].duration_time || 0.02);
+  assert(end > d - 0.5, `audio ends at ${end} but duration is ${d}`);
+  return page;
+});
+
+await test('merge-video:720p-preset-portrait-first', async () => {
+  const page = await open('/merge-video/');
+  await upload(page, '#mv-pick', ['merge-b-portrait.mp4', 'merge-c-silent.mp4']);
+  await page.waitForFunction(() => [...document.querySelectorAll('#mv-list .meta')].length === 2
+    && [...document.querySelectorAll('#mv-list .meta')].every((m) => /\d+:\d+/.test(m.innerText)), { timeout: 30000 });
+  await page.select('#mv-size', '1280x720');
+  await page.click('#mv-go');
+  await page.waitForSelector('#mv-result .result', { timeout: 180000 });
+  await page.click('#mv-result .btn.lg');
+  const info = probe(await waitDownload(page));
+  const v = info.streams.find((s) => s.codec_type === 'video');
+  assert(v.width === 1280 && v.height === 720, `${v.width}x${v.height}`);
+  assert(info.streams.some((s) => s.codec_type === 'audio'), 'no audio stream');
+  return page;
+});
+
 await test('compress-video:target', async () => {
   const page = await open('/compress-video/');
   await upload(page, '#cv-pick', ['phone-1080p.mp4']);
@@ -148,7 +197,8 @@ await test('convert-video:remux+reencode', async () => {
   const n1 = await waitDownload(page, 1);
   assert(probe(n1).format.format_name.includes('mp4'), 'mp4 container');
   await upload(page, '#cx-pick', ['clip-zh.mp4']);
-  await waitText(page, '#cx-mode', /re-encoding/);
+  // Wait for state unique to the new file (its card, Convert enabled), not the stale mode text of the previous file.
+  await page.waitForFunction(() => /clip-zh.mp4/.test(document.querySelector('#cx-file')?.innerText || '') && !document.querySelector('#cx-go').disabled && /re-encoding/.test(document.querySelector('#cx-mode')?.innerText || '') && !/Instant/.test(document.querySelector('#cx-mode')?.innerText || ''), { timeout: 60000, polling: 200 });
   await page.click('#cx-go');
   await waitText(page, '#cx-result', /WEBM/, 120000);
   await page.click('#cx-result .btn.lg');
@@ -160,7 +210,7 @@ await test('convert-video:remux+reencode', async () => {
 await test('convert-video:legacy-avi', async () => {
   const page = await open('/convert-video/');
   await upload(page, '#cx-pick', ['clip.avi']);
-  await page.waitForSelector('#cx-file .meta small');
+  await page.waitForFunction(() => /clip.avi/.test(document.querySelector('#cx-file')?.innerText || '') && !document.querySelector('#cx-go').disabled, { timeout: 60000, polling: 200 });
   await page.click('#cx-go');
   await page.waitForSelector('#cx-result .result', { timeout: 180000 });
   await page.click('#cx-result .btn.lg');

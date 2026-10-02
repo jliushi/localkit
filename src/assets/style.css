@@ -300,6 +300,12 @@ audio { background: transparent; max-height: none; }
 .flist li canvas, .flist li img { width: 40px; height: 52px; object-fit: contain; background: #fff; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
 .flist li.dragging, .pg.dragging { opacity: .35; }
 .handle { cursor: grab; color: var(--muted); padding: 4px; display: inline-flex; }
+@media (max-width: 560px) {
+  .flist li { flex-wrap: wrap; gap: 6px 10px; padding: 8px; }
+  .flist li .name { flex-basis: calc(100% - 190px); }
+  .flist li .meta { flex: 1; text-align: right; }
+  .flist li .pg-tools { margin: 0; margin-left: auto; }
+}
 
 .pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
 .pg { position: relative; background: var(--bg); border: 2px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; text-align: center; user-select: none; transition: border-color .12s, background .12s; }
