@@ -96,6 +96,139 @@ async function test(name, fn) {
 
 // ================================================================ video & audio
 
+// Audio cleanup: verify exported samples and encoded video packets, not only UI state.
+const cleanupRms = (file, start, duration) => {
+  const bytes = execFileSync('ffmpeg', ['-v', 'error', '-ss', String(start), '-i', file, '-t', String(duration), '-vn', '-ac', '1', '-ar', '48000', '-f', 'f32le', 'pipe:1']);
+  let sum = 0;
+  for (let i = 0; i + 3 < bytes.length; i += 4) sum += bytes.readFloatLE(i) ** 2;
+  return Math.sqrt(sum / (bytes.length / 4));
+};
+const cleanupVideoHashes = (file) => JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_packets', '-show_data_hash', 'sha256', '-show_entries', 'packet=data_hash', '-of', 'json', file]).toString()).packets.map((p) => p.data_hash);
+const cleanupReady = (page, prefix) => page.waitForFunction((p) => document.querySelector(`#${p}-go`)?.disabled === false, { timeout: 60000 }, prefix);
+
+await test('remove-silence:video-sync-and-cutlist', async () => {
+  const page = await open('/remove-silence/');
+  await upload(page, '#rs-pick', ['cleanup-silence.mp4']);
+  await cleanupReady(page, 'rs');
+  const removed = Number(await page.$eval('#rs-summary', (e) => e.dataset.removed));
+  assert(removed > 3.3 && removed < 4.1, `removed ${removed}`);
+  await page.click('#rs-cutlist');
+  const list = fs.readFileSync(outFile(await waitDownload(page)), 'utf8');
+  assert(list.includes('KEEP') && list.includes('REMOVE') && list.includes('cleanup-silence.mp4'), 'readable cut list');
+  await page.click('#rs-go');
+  await page.waitForSelector('#rs-result .result', { timeout: 120000 });
+  await clickSettled(page, '#rs-result .btn.lg');
+  const info = probe(await waitDownload(page, 2));
+  const video = info.streams.find((s) => s.codec_type === 'video'), audio = info.streams.find((s) => s.codec_type === 'audio');
+  assert(video && audio, 'both tracks present');
+  assert(Number(info.format.duration) < 4.8 && Number(info.format.duration) > 3.9, `duration ${info.format.duration}`);
+  assert(Math.abs(Number(video.duration) - Number(audio.duration)) < .2, `A/V durations ${video.duration}/${audio.duration}`);
+  return page;
+});
+
+await test('remove-silence:audio-mp3-controls', async () => {
+  const page = await open('/remove-silence/', 'zh', 390);
+  await upload(page, '#rs-pick', ['cleanup-silence.wav']);
+  await cleanupReady(page, 'rs');
+  const before = Number(await page.$eval('#rs-summary', (e) => e.dataset.removed));
+  await page.select('#rs-padding', '0.4');
+  const after = Number(await page.$eval('#rs-summary', (e) => e.dataset.removed));
+  assert(after < before, 'more padding preserves more sound');
+  await page.select('#rs-format', 'mp3');
+  await page.click('#rs-go');
+  await page.waitForSelector('#rs-result .result', { timeout: 120000 });
+  await clickSettled(page, '#rs-result .btn.lg');
+  const info = probe(await waitDownload(page));
+  assert(info.streams[0].codec_name === 'mp3', 'real MP3');
+  assert(Number(info.format.duration) < 5.5, `shorter MP3 ${info.format.duration}`);
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= 391), 'phone layout');
+  return page;
+});
+
+await test('remove-silence:all-silent-recover', async () => {
+  const page = await open('/remove-silence/');
+  await upload(page, '#rs-pick', ['cleanup-all-silent.wav']);
+  await page.waitForSelector('#rs-alert .alert');
+  assert(await page.$eval('#rs-go', (e) => e.disabled), 'empty output blocked');
+  assert(/entire recording/.test(await text(page, '#rs-alert')), 'clear all-silent message');
+  await upload(page, '#rs-pick', ['cleanup-silence.wav']);
+  await cleanupReady(page, 'rs');
+  await page.select('#rs-format', 'wav');
+  await page.click('#rs-go');
+  await page.waitForSelector('#rs-result .result', { timeout: 120000 });
+  await clickSettled(page, '#rs-result .btn.lg');
+  assert(probe(await waitDownload(page)).streams[0].codec_name === 'pcm_s16le', 'recovered WAV export');
+  return page;
+});
+
+await test('noise-reduction:video-packets-and-noise-rms', async () => {
+  const page = await open('/noise-reduction/');
+  await upload(page, '#nr-pick', ['cleanup-noisy.mp4']);
+  await cleanupReady(page, 'nr');
+  await page.$eval('#nr-strength', (e) => { e.value = '100'; e.dispatchEvent(new Event('input')); });
+  await page.click('#nr-go');
+  await page.waitForSelector('#nr-result .result', { timeout: 120000 });
+  await clickSettled(page, '#nr-result .btn.lg');
+  const name = await waitDownload(page), output = outFile(name);
+  const info = probe(name), originalHashes = cleanupVideoHashes(fixture('cleanup-noisy.mp4')), outputHashes = cleanupVideoHashes(output);
+  assert(info.streams.some((s) => s.codec_type === 'video'), 'video retained');
+  assert(JSON.stringify(originalHashes) === JSON.stringify(outputHashes), 'all original encoded video packets unchanged');
+  const before = cleanupRms(fixture('cleanup-noisy.mp4'), .8, .8), after = cleanupRms(output, .8, .8);
+  assert(after < before * .55, `noise RMS ${before.toFixed(5)} -> ${after.toFixed(5)}`);
+  assert(cleanupRms(output, 2.5, 3) > cleanupRms(fixture('cleanup-noisy.mp4'), 2.5, 3) * .2, 'speech retained');
+  await page.$eval('#nr-result video', (e) => { e.currentTime = 3; });
+  await page.click('#nr-result [aria-pressed="false"]');
+  await page.waitForFunction(() => Math.abs(document.querySelector('#nr-result video').currentTime - 3) < .15);
+  assert(await page.$eval('#nr-result .actions button:first-child', (e) => e.getAttribute('aria-pressed') === 'true'), 'A/B selected original');
+  return page;
+});
+
+await test('noise-reduction:audio-wav-dry-and-cancel', async () => {
+  const page = await open('/noise-reduction/', 'zh', 390);
+  await upload(page, '#nr-pick', ['cleanup-noisy.wav']);
+  await cleanupReady(page, 'nr');
+  await page.click('#nr-go');
+  await page.waitForSelector('#nr-task .task button');
+  await page.click('#nr-task .task button');
+  await cleanupReady(page, 'nr');
+  assert(await page.$('#nr-result .result') === null, 'cancel produces no partial result');
+  await page.$eval('#nr-strength', (e) => { e.value = '0'; e.dispatchEvent(new Event('input')); });
+  await page.click('#nr-go');
+  await page.waitForSelector('#nr-result .result', { timeout: 120000 });
+  await clickSettled(page, '#nr-result .btn.lg');
+  const name = await waitDownload(page);
+  assert(probe(name).streams[0].codec_name === 'pcm_s16le', 'real WAV');
+  const before = cleanupRms(fixture('cleanup-noisy.wav'), .8, .8), after = cleanupRms(outFile(name), .8, .8);
+  assert(Math.abs(after / before - 1) < .01, 'zero strength preserves original audio');
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= 391), 'phone layout');
+  return page;
+});
+
+await test('noise-reduction:audio-mp3-highpass', async () => {
+  const page = await open('/noise-reduction/');
+  await upload(page, '#nr-pick', ['cleanup-noisy.wav']);
+  await cleanupReady(page, 'nr');
+  await page.select('#nr-format', 'mp3');
+  await page.click('#nr-highpass');
+  await page.click('#nr-go');
+  await page.waitForSelector('#nr-result .result', { timeout: 120000 });
+  await clickSettled(page, '#nr-result .btn.lg');
+  assert(probe(await waitDownload(page)).streams[0].codec_name === 'mp3', 'MP3 denoiser export');
+  return page;
+});
+
+for (const tool of ['remove-silence', 'noise-reduction']) for (const lang of ['en', 'zh']) for (const width of [1280, 390]) {
+  await test(`${tool}:sample-${lang}-${width}`, async () => {
+    const page = await open(`/${tool}/`, lang, width), prefix = tool === 'remove-silence' ? 'rs' : 'nr';
+    await page.click(`#${prefix}-pick .sample`);
+    await cleanupReady(page, prefix);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no horizontal scroll');
+    const description = await page.$eval('meta[name="description"]', (e) => e.content);
+    assert(description.length > 60, 'localized metadata');
+    return page;
+  });
+}
+
 await test('merge-video:3clips+mixedres+silent', async () => {
   const page = await open('/merge-video/');
   await upload(page, '#mv-pick', ['merge-a-720p.mp4', 'merge-b-portrait.mp4', 'merge-c-silent.mp4']);

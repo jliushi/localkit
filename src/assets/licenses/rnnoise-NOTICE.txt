@@ -1,0 +1,19 @@
+LocalKit Voice Noise Reduction
+
+@shiguredo/rnnoise-wasm 2025.1.5
+Copyright 2021-2025, Takeru Ohta (Original Author)
+Copyright 2021-2025, Shiguredo Inc.
+Apache License 2.0; see rnnoise-wasm-Apache-2.0.txt.
+Source: https://github.com/shiguredo/rnnoise-wasm
+
+The embedded RNNoise WebAssembly engine and model are distributed under
+the RNNoise BSD license; see RNNoise-BSD.txt for the complete copyright
+notices, conditions, and disclaimer.
+Source: https://github.com/xiph/rnnoise
+
+The LocalKit integration resamples to 48 kHz, processes 480-sample frames
+in a Web Worker, compensates one frame of analysis delay, and optionally
+mixes the denoised signal with the original. The RNNoise library is unmodified.
+
+The public demonstration recordings are generated test signals and a
+synthetic English voice, created for this project; they are not user uploads.
