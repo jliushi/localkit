@@ -314,7 +314,7 @@ if (!only || only.has('merge-pdf')) {
 let pdfjsNode;
 async function pageTexts(file) {
   pdfjsNode ||= await import('pdfjs-dist/legacy/build/pdf.mjs');
-  const doc = await pdfjsNode.getDocument({ data: new Uint8Array(fs.readFileSync(outFile(file))), isEvalSupported: false, standardFontDataUrl: path.join(ROOT, 'node_modules', 'pdfjs-dist', 'standard_fonts') + path.sep }).promise;
+  const doc = await pdfjsNode.getDocument({ data: new Uint8Array(fs.readFileSync(outFile(file))), isEvalSupported: false, standardFontDataUrl: path.join(ROOT, 'node_modules', 'pdfjs-dist', 'standard_fonts').split(path.sep).join('/') + '/' }).promise;
   const out = [];
   for (let i = 1; i <= doc.numPages; i++) out.push((await (await doc.getPage(i)).getTextContent()).items.map((x) => x.str).join(' ').trim());
   return out;
