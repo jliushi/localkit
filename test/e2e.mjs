@@ -54,6 +54,24 @@ async function waitDownload(page, n = 1, timeout = 30000) {
   return name;
 }
 
+// Result panels scroll themselves into view (smooth) and the main thread can stall while the first <video>/<canvas>
+// initialises, so the target moves after Puppeteer has computed its click point. Wait until the element and the
+// scroll position have stopped moving (300 ms) before clicking, otherwise the click lands on the wrong spot.
+async function clickSettled(page, sel) {
+  await page.waitForSelector(sel);
+  await page.evaluate((s) => new Promise((resolve) => {
+    let last = '', same = 0;
+    const timer = setInterval(() => {
+      const r = document.querySelector(s)?.getBoundingClientRect();
+      const key = r ? `${Math.round(r.top + scrollY)}|${Math.round(r.left)}|${Math.round(scrollY)}` : '';
+      same = key && key === last ? same + 1 : 0;
+      last = key;
+      if (same >= 6) { clearInterval(timer); resolve(); }
+    }, 50);
+  }), sel);
+  await page.click(sel);
+}
+
 async function test(name, fn) {
   if (only && !only.has(name.split(':')[0])) return;
   if (args['skip-ai'] && name.startsWith('ai-')) return;
@@ -91,7 +109,7 @@ await test('merge-video:3clips+mixedres+silent', async () => {
   assert(/3/.test(total), `total: ${total}`);
   await page.click('#mv-go');
   await page.waitForSelector('#mv-result .result', { timeout: 180000 });
-  await page.click('#mv-result .btn.lg');
+  await clickSettled(page, '#mv-result .btn.lg');
   const name = await waitDownload(page);
   const info = probe(name);
   const v = info.streams.filter((s) => s.codec_type === 'video');
@@ -118,7 +136,7 @@ await test('merge-video:720p-preset-portrait-first', async () => {
   await page.select('#mv-size', '1280x720');
   await page.click('#mv-go');
   await page.waitForSelector('#mv-result .result', { timeout: 180000 });
-  await page.click('#mv-result .btn.lg');
+  await clickSettled(page, '#mv-result .btn.lg');
   const info = probe(await waitDownload(page));
   const v = info.streams.find((s) => s.codec_type === 'video');
   assert(v.width === 1280 && v.height === 720, `${v.width}x${v.height}`);
@@ -136,7 +154,7 @@ await test('compress-video:target', async () => {
   await page.click(`#cv-targets .chip:nth-child(${idx + 1}) span`);
   await page.click('#cv-go');
   await page.waitForSelector('#cv-result .compare', { timeout: 180000 });
-  await page.click('#cv-result .btn.lg');
+  await clickSettled(page, '#cv-result .btn.lg');
   const name = await waitDownload(page);
   const size = fs.statSync(outFile(name)).size;
   assert(size <= 10 * 1024 * 1024 && size > 4 * 1024 * 1024, `size ${size}`);
@@ -160,7 +178,7 @@ await test('trim-video:handles', async () => {
   }
   await page.click('#tv-go');
   await page.waitForSelector('#tv-result .result', { timeout: 60000 });
-  await page.click('#tv-result .btn.lg');
+  await clickSettled(page, '#tv-result .btn.lg');
   const name = await waitDownload(page);
   const d = Number(probe(name).format.duration);
   assert(d > 3.8 && d < 6, `duration ${d}`);
@@ -171,12 +189,12 @@ await test('video-to-mp3:auto+m4a+range', async () => {
   const page = await open('/video-to-mp3/', 'zh');
   await upload(page, '#va-pick', ['phone-1080p.mp4']);
   await page.waitForSelector('#va-result .result', { timeout: 60000 });
-  await page.click('#va-result .btn.lg');
+  await clickSettled(page, '#va-result .btn.lg');
   const n1 = await waitDownload(page, 1);
   assert(probe(n1).streams[0].codec_name === 'mp3', 'mp3');
   await page.click('input[name="va-fmt"][value="m4a"] + span');
   await waitText(page, '#va-result', /M4A/);
-  await page.click('#va-result .btn.lg');
+  await clickSettled(page, '#va-result .btn.lg');
   const n2 = await waitDownload(page, 2);
   assert(probe(n2).streams[0].codec_name === 'aac', 'aac');
   await page.click('input[name="va-fmt"][value="mp3"] + span');
@@ -193,7 +211,7 @@ await test('convert-video:remux+reencode', async () => {
   await waitText(page, '#cx-mode', /Instant/);
   await page.click('#cx-go');
   await page.waitForSelector('#cx-result .result', { timeout: 60000 });
-  await page.click('#cx-result .btn.lg');
+  await clickSettled(page, '#cx-result .btn.lg');
   const n1 = await waitDownload(page, 1);
   assert(probe(n1).format.format_name.includes('mp4'), 'mp4 container');
   await upload(page, '#cx-pick', ['clip-zh.mp4']);
@@ -201,7 +219,7 @@ await test('convert-video:remux+reencode', async () => {
   await page.waitForFunction(() => /clip-zh.mp4/.test(document.querySelector('#cx-file')?.innerText || '') && !document.querySelector('#cx-go').disabled && /re-encoding/.test(document.querySelector('#cx-mode')?.innerText || '') && !/Instant/.test(document.querySelector('#cx-mode')?.innerText || ''), { timeout: 60000, polling: 200 });
   await page.click('#cx-go');
   await waitText(page, '#cx-result', /WEBM/, 120000);
-  await page.click('#cx-result .btn.lg');
+  await clickSettled(page, '#cx-result .btn.lg');
   const n2 = await waitDownload(page, 2);
   assert(probe(n2).streams.find((s) => s.codec_type === 'video').codec_name === 'vp9', 'vp9');
   return page;
@@ -213,7 +231,7 @@ await test('convert-video:legacy-avi', async () => {
   await page.waitForFunction(() => /clip.avi/.test(document.querySelector('#cx-file')?.innerText || '') && !document.querySelector('#cx-go').disabled, { timeout: 60000, polling: 200 });
   await page.click('#cx-go');
   await page.waitForSelector('#cx-result .result', { timeout: 180000 });
-  await page.click('#cx-result .btn.lg');
+  await clickSettled(page, '#cx-result .btn.lg');
   const n = await waitDownload(page);
   assert(probe(n).streams.find((s) => s.codec_type === 'video').codec_name === 'h264', 'h264 from avi');
   return page;
@@ -225,7 +243,7 @@ await test('video-to-gif:make', async () => {
   await page.waitForSelector('.tl-track', { timeout: 30000 });
   await page.click('#vg-go');
   await page.waitForSelector('#vg-result .result', { timeout: 120000 });
-  await page.click('#vg-result .btn.lg');
+  await clickSettled(page, '#vg-result .btn.lg');
   const n = await waitDownload(page);
   const s = probe(n).streams[0];
   assert(s.codec_name === 'gif' && s.width === 480, `${s.codec_name} ${s.width}`);
@@ -485,7 +503,7 @@ await test('compress-pdf:images', async () => {
   await page.waitForSelector('#cp-file .thumb canvas', { timeout: 30000 });
   await page.click('#cp-go');
   await page.waitForSelector('#cp-result .result', { timeout: 120000 });
-  await page.click('#cp-result .btn.lg');
+  await clickSettled(page, '#cp-result .btn.lg');
   const n = await waitDownload(page);
   const size = fs.statSync(outFile(n)).size;
   assert(size < fs.statSync(fixture('heavy.pdf')).size * 0.2, `size ${size}`);
