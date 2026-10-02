@@ -161,6 +161,21 @@ await test('remove-silence:all-silent-recover', async () => {
   return page;
 });
 
+await test('remove-silence:rotation-and-cancel', async () => {
+  const page = await open('/remove-silence/');
+  await upload(page, '#rs-pick', ['cleanup-rotated.mp4']);
+  await cleanupReady(page, 'rs');
+  await page.evaluate(() => { document.querySelector('#rs-go').click(); document.querySelector('#rs-task button').click(); });
+  await cleanupReady(page, 'rs');
+  assert(await page.$('#rs-result .result') === null, 'cancel leaves no partial result');
+  await page.click('#rs-go');
+  await page.waitForSelector('#rs-result .result', { timeout: 120000 });
+  await clickSettled(page, '#rs-result .btn.lg');
+  const video = probe(await waitDownload(page)).streams.find((s) => s.codec_type === 'video');
+  assert(video.width === 180 && video.height === 320, `portrait rotation retained: ${video.width}x${video.height}`);
+  return page;
+});
+
 await test('noise-reduction:video-packets-and-noise-rms', async () => {
   const page = await open('/noise-reduction/');
   await upload(page, '#nr-pick', ['cleanup-noisy.mp4']);

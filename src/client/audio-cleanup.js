@@ -104,7 +104,8 @@ export async function exportPcm(media, pcm, { format = 'wav', kept, signal, onPr
     else {
       const codec = await pickVideoCodec('mp4', media.video.displayWidth, media.video.displayHeight);
       if (!codec) throw new Error('noEncoder');
-      video = new VideoSampleSource({ codec, quality: new Quality('high'), keyFrameInterval: 2 });
+      video = new VideoSampleSource({ codec, quality: new Quality('high'), keyFrameInterval: 2,
+        transform: media.video.rotation ? { force: true } : undefined });
     }
     output.addVideoTrack(video, { rotation: copy ? media.video.rotation : 0 });
   }
