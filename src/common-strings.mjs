@@ -3,12 +3,12 @@ export const COMMON = {
   en: {
     siteName: 'LocalKit',
     homeTitle: 'LocalKit — Free Video, PDF & Image Tools, No Upload, No Sign-up',
-    homeDesc: 'Free online tools to compress video, convert MP4 to MP3/GIF, generate AI subtitles, merge and edit PDF, convert HEIC to JPG and compress images — all in your browser. No upload, no sign-up, no watermark.',
+    homeDesc: 'Edit videos and PDFs, convert images, generate subtitles and build a resume with free tools in your browser. No file uploads, sign-up or added watermarks.',
     homeH1: 'Free online tools that never upload your files',
-    homeLead: 'LocalKit is a free online toolbox that compresses video, converts MP4 to MP3 or GIF, generates AI subtitles, merges and edits PDFs and converts images — entirely in your browser, with no upload, no sign-up, no watermark and no file-size limits.',
+    homeLead: 'Edit videos and PDFs, work with images, or build your next resume. Everything runs in your browser — no account needed.',
     homeSearch: 'Search tools, e.g. "compress video"',
     noMatch: 'No tool matches "$1".',
-    trust: ['Files never leave your device', 'No sign-up', 'No watermark', 'Free, no limits'],
+    trust: ['Files never leave your device', 'No sign-up', 'No watermark', 'Free to use'],
     whyTitle: 'Why LocalKit?',
     why: [
       ['lock', 'Private by design', 'Most online tools upload your files to their servers. LocalKit processes everything inside your browser, so your videos, contracts and photos are never sent anywhere.'],
@@ -66,9 +66,9 @@ export const COMMON = {
   zh: {
     siteName: 'LocalKit 本地工具箱',
     homeTitle: 'LocalKit 本地工具箱 — 免费视频、PDF、图片在线工具，文件不上传',
-    homeDesc: '免费在线工具：视频压缩、视频转 MP3/GIF、AI 字幕、PDF 合并编辑、PDF 压缩、HEIC 转 JPG、图片压缩转格式等 20 个。文件只在浏览器本地处理，免注册、无水印、不限大小。',
+    homeDesc: '免费在线工具：剪辑压缩视频、生成字幕、合并编辑 PDF、转换图片格式、识别图片文字和制作简历。文件只在浏览器本地处理，不上传服务器，免注册、无水印，支持中英文切换。',
     homeH1: '文件不上传的免费在线工具',
-    homeLead: 'LocalKit 本地工具箱是一个免费的在线工具集：视频压缩、视频转 MP3、AI 字幕、PDF 合并、图片压缩等 20 个工具，全部在你的浏览器里运行。快速、私密、免费 —— 无需注册、没有水印、不限文件大小。',
+    homeLead: '剪辑视频、编辑 PDF、处理图片，或制作下一份简历。全部在浏览器里完成，无需注册。',
     homeSearch: '搜索工具，例如「压缩视频」',
     noMatch: '没有找到与「$1」匹配的工具。',
     trust: ['文件不离开你的设备', '免注册', '无水印', '免费不限次'],

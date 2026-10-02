@@ -30,7 +30,7 @@ const card = (lang, title, line, color, iconSvg) => `<body style="margin:0;width
   <div style="display:flex;align-items:center;gap:46px">
     ${iconSvg ? `<div style="flex:0 0 auto;width:190px;height:190px;border-radius:48px;background:${color};display:grid;place-items:center;box-shadow:0 20px 50px ${color}66">${iconSvg}</div>` : ''}
     <div><div style="font-size:${lang === 'zh' ? 76 : 70}px;font-weight:800;line-height:1.08;letter-spacing:-1px">${title}</div>
-    <div style="font-size:${lang === 'zh' ? 34 : 31}px;margin-top:22px;color:#cbd5e1;max-width:760px;line-height:1.35">${line}</div></div>
+    <div style="font-size:${lang === 'zh' ? 34 : 31}px;margin-top:22px;color:#cbd5e1;max-width:${iconSvg ? '760px' : '100%'};line-height:1.35">${line}</div></div>
   </div>
   <div style="display:flex;gap:14px;font-size:26px;color:#e2e8f0">${COMMON[lang].trust.slice(0, 3).map((x) => `<span style="background:rgba(255,255,255,.1);border-radius:999px;padding:8px 20px">✓ ${x}</span>`).join('')}</div>
 </body>`;

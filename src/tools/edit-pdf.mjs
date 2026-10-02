@@ -20,7 +20,7 @@ export default {
       short: 'Change existing text, add text and images, highlight, draw, fill forms, sign and manage pages.',
       keywords: ['edit pdf', 'pdf editor', 'edit pdf text', 'sign pdf', 'fill pdf form', 'annotate pdf', 'highlight pdf', 'add text to pdf', 'whiteout pdf'],
       title: 'Edit PDF Online Free: Change Text, Fill Forms, Sign',
-      desc: 'Free online PDF editor: change existing text, add text and images, highlight, draw, fill forms, sign and manage pages. Runs in your browser, nothing is uploaded.',
+      desc: 'Free PDF editor: change existing text, add text and images, highlight, draw, fill forms, sign and manage pages. Runs in your browser, nothing is uploaded.',
       h1: 'Edit PDF online: change text, fill forms, annotate and sign',
       sub: 'A free PDF editor that works like a word processor. Click any line of text to rewrite it, add new text boxes, highlight, draw shapes, fill in form fields, sign, and reorder or rotate pages. English and Chinese both work, and your file never leaves your device.',
       features: [

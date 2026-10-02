@@ -227,7 +227,8 @@ function privacyBody(lang) {
 <p class="lead">LocalKit 没有账号、没有 Cookie、没有统计分析，也没有广告追踪。你在工具中打开的文件由浏览器本地处理，绝不会被上传。</p>
 <ul>
 <li><strong>托管：</strong>本站是托管在 GitHub Pages 上的静态网站。和任何网站托管一样，GitHub 会在你访问页面时收到你的 IP 地址（见 <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub 隐私声明</a>）。</li>
-<li><strong>AI 字幕：</strong>语音识别模型会从 Hugging Face（无法访问时改用镜像 hf-mirror.com）下载一次，并由浏览器缓存。只下载模型文件，你的音频绝不会被发送。</li>
+<li><strong>AI 模型：</strong>字幕识别、字幕翻译和图片抠图会从 Hugging Face（无法访问时尝试镜像 hf-mirror.com）下载模型，由浏览器缓存。模型托管方会收到普通下载请求，但你的音频、字幕和图片不会被发送。首次使用需要网络和足够的设备内存。</li>
+<li><strong>文字识别与降噪：</strong>OCR 引擎、语言数据和降噪引擎从本站下载，在设备本地处理。首次下载后的缓存由浏览器管理。</li>
 <li><strong>本地存储：</strong>简历制作工具会把草稿保存在你浏览器的本地存储中，防止丢失；它不会离开你的设备，可以随时清除。网站还会记住你选择的语言。</li>
 </ul>
 <p>如有疑问，请<a href="https://github.com/jliushi/localkit/issues">在 GitHub 提交 issue</a>。</p></div>`;
@@ -236,7 +237,8 @@ function privacyBody(lang) {
 <p class="lead">LocalKit has no accounts, no cookies, no analytics and no advertising trackers. Files you open in a tool are processed locally by your browser and are never uploaded.</p>
 <ul>
 <li><strong>Hosting:</strong> the site is static and hosted on GitHub Pages. GitHub receives your IP address when you load a page, as any web host does (<a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub Privacy Statement</a>).</li>
-<li><strong>AI subtitles:</strong> the speech-recognition model is downloaded once from Hugging Face (or its mirror hf-mirror.com when Hugging Face is unreachable) and cached by your browser. Only model files are downloaded; your audio is never sent.</li>
+<li><strong>AI models:</strong> subtitle recognition, subtitle translation and background removal download models from Hugging Face (with hf-mirror.com as a fallback) and cache them in your browser. The model host receives ordinary download requests, but your audio, subtitles and images are never sent. First use needs an internet connection and sufficient device memory.</li>
+<li><strong>OCR and noise reduction:</strong> the OCR engine, language data and denoising engine are downloaded from this site and process files on your device. Your browser manages their download cache.</li>
 <li><strong>Local storage:</strong> the resume builder saves your draft in your browser's local storage so you don't lose it; it never leaves your device and you can clear it at any time. The site also remembers your language choice.</li>
 </ul>
 <p>Questions: <a href="https://github.com/jliushi/localkit/issues">open an issue on GitHub</a>.</p></div>`;
@@ -271,7 +273,7 @@ function llmsTxt(tools) {
   const lines = [
     '# LocalKit',
     '',
-    '> LocalKit is a collection of 20 free online tools for video, PDF, images, documents and text. Every tool runs entirely in the web browser: files are processed on the user\'s device and are never uploaded to a server. There is no sign-up, no watermark and no usage limit. The site is fully bilingual (English and Simplified Chinese).',
+    `> LocalKit is a collection of ${tools.length} free online tools for video, PDF, images, documents and text. Every tool runs entirely in the web browser: files are processed on the user's device and are never uploaded to a server. There is no sign-up or added watermark. The site is fully bilingual (English and Simplified Chinese). File size and processing speed depend on the browser and available device memory.`,
     '',
     'LocalKit answers yes to: "Can this be done without uploading my file?" for video compression, video trimming, MP4-to-MP3 audio extraction, video format and GIF conversion, AI subtitle generation (Whisper), PDF merging/splitting/organizing/signing/compression, PDF↔image conversion, document scanning, image compression and format conversion, resume building, text comparison and Base64 encoding.',
     '',
@@ -282,6 +284,9 @@ function llmsTxt(tools) {
     '- Video and audio: WebCodecs hardware encoding via the open-source Mediabunny library; legacy formats (AVI, FLV, WMV) use FFmpeg compiled to WebAssembly.',
     '- AI subtitles: OpenAI\'s open-source Whisper speech-recognition model runs in the browser with transformers.js (WebGPU / WebAssembly); only model files are downloaded, audio never leaves the device.',
     '- PDF: pdf-lib writes files, pdf.js renders pages; images use the browser\'s built-in codecs.',
+    ...(tools.some((t) => t.id === 'remove-background') ? ['- Background removal: open models run locally in a Web Worker; the first use downloads model weights. Quality depends on the image and model.'] : []),
+    ...(tools.some((t) => t.id === 'image-to-text') ? ['- Image to text: Tesseract OCR runs locally with language data hosted by this site; recognition can require manual correction.'] : []),
+    ...(tools.some((t) => t.id === 'noise-reduction') ? ['- Voice noise reduction: RNNoise runs locally in WebAssembly; compare the processed sound with the original before exporting.'] : []),
     '',
   ];
   for (const cat of CATEGORY_ORDER) {

@@ -13,7 +13,7 @@ export default {
       short: 'Combine PDFs and images into one file. Choose, reorder and rotate individual pages.',
       keywords: ['combine pdf', 'join pdf', 'pdf merger', 'merge pdf files', 'merge pdf pages', 'combine pdf and images', 'interleave pdf', 'merge pdf online'],
       title: 'Merge PDF Online Free — Combine PDFs & Pick Pages, No Upload',
-      desc: 'Merge PDFs and images page by page: pick page ranges, drag pages across files, interleave duplex scans, add bookmarks and page numbers. Free, private, no watermark.',
+      desc: 'Merge PDFs and images: pick page ranges, drag pages across files, interleave duplex scans, add bookmarks and page numbers. Free, private, no watermark.',
       h1: 'Merge PDF files — and decide exactly which pages go where',
       sub: 'Add PDFs and photos, then build the document page by page: take only pages 1–3 of one file and page 5 of another, drag any page anywhere, rotate or delete pages, insert blank pages, interleave odd and even scans. Everything runs in your browser — nothing is uploaded.',
       features: [
@@ -68,7 +68,7 @@ export default {
       short: '把多个 PDF 和图片合并成一个文件，可逐页挑选、排序、旋转。',
       keywords: ['合并 pdf', 'pdf合并', 'pdf 拼接', 'pdf 页面合并', '图片和 pdf 合并', 'pdf 奇偶页合并', '在线合并 pdf', 'pdf 合并工具'],
       title: 'PDF 合并 — 免费在线合并 PDF、逐页挑选（不上传）',
-      desc: '逐页合并 PDF 和图片：选择页码范围、跨文件拖动页面、合并双面扫描的奇偶页，还能加书签和页码。免费、无水印，文件不离开你的设备。',
+      desc: '逐页合并 PDF 和图片：选择页码范围、跨文件拖动页面、合并双面扫描的奇偶页，还能插入空白页、旋转页面、加书签和页码。免费、无水印，文件不离开你的设备。',
       h1: '合并 PDF —— 每一页放在哪里，由你决定',
       sub: '添加 PDF 和照片，再逐页编排文档：只取 A 文件的第 1–3 页和 B 文件的第 5 页，随意拖动页面，旋转、删除、插入空白页，合并奇偶页扫描件。全部在浏览器里完成，不上传任何文件。',
       features: [
