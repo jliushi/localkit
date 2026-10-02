@@ -3,7 +3,8 @@ import { IMAGE_ACCEPT, decodeImage, drawRotated, toBlob } from './image-core.js'
 
 const items = [];
 let worker, running = false, generation = 0, task, rejectCanceled;
-const sample = { url: `${LK.base}/assets/samples/ocr.png`, name: 'ocr.png', type: 'image/png' };
+const sampleName = `ocr-${LK.lang === 'zh' ? 'chinese' : 'english'}.png`;
+const sample = { url: `${LK.base}/assets/samples/${sampleName}`, name: sampleName, type: 'image/png' };
 filePicker($('#ocr-pick'), { accept: IMAGE_ACCEPT, multiple: true, title: t('drop'), hint: t('dropHint'), sample, onFiles: add });
 filePicker($('#ocr-more'), { accept: IMAGE_ACCEPT, multiple: true, compact: true, title: t('add'), onFiles: add });
 
@@ -76,6 +77,8 @@ async function run() {
   try {
     const lang = $('#ocr-lang').value;
     worker ||= new Worker(`${LK.base}/assets/js/ocr.worker.js`, { type: 'module' });
+    // Install before encoding: an offline module worker can fail immediately.
+    worker.onerror = e => rejectCanceled?.(new Error(e.message || 'OCR worker could not load.'));
     for (const it of items.filter(x => !x.done)) {
       if (id !== generation) break;
       task.text(it.file.name);

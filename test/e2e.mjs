@@ -823,6 +823,7 @@ function rgbaOf(file) {
 
 await test('remove-background:general-transparent', async () => {
   const page = await open('/remove-background/');
+  await page.select('#rb-engine', 'cpu'); // Exercise the real WASM backend even on a WebGPU machine.
   await upload(page, '#rb-pick', ['portrait.jpg']);
   await page.waitForSelector('#rb-grid .rb-view', { timeout: 600000 });
   await page.click('#rb-grid .actions .btn');
@@ -858,7 +859,6 @@ await test('remove-background:modnet-blue-jpg-zh', async () => {
   return page;
 });
 
-// The old public Chinese traineddata includes eight legacy parameters that
 await test('remove-background:generated-batch-zip-cancel-mobile', async () => {
   const page = await open('/remove-background/', 'zh', 390);
   await upload(page, '#rb-pick', ['subject-bottle.png', 'portrait.jpg']);

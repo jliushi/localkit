@@ -13,7 +13,7 @@ export default {
       short: 'Cut out people, products and pets with on-device AI — transparent PNG or a new colour.',
       keywords: ['remove background', 'background remover', 'transparent background', 'cut out image', 'remove bg', 'id photo background', 'change background color', 'png transparent', 'photo cutout'],
       title: 'Remove Background from Image — Free AI, No Upload',
-      desc: 'Remove the background from photos with AI that runs in your browser: transparent PNG, or white, blue and red ID-photo backgrounds. Batch, ZIP, no upload, no watermark.',
+      desc: 'Remove photo backgrounds with private browser AI. Save transparent PNGs or change the background colour. Batch processing, ZIP download, no upload or watermark.',
       h1: 'Remove the background from an image',
       sub: 'Drop a photo and an open-source AI model cuts out the subject — a person, product, pet or object — right in your browser. Download a transparent PNG, or fill the background with white, blue, red or any colour for ID photos. Your pictures are never uploaded, and nothing is watermarked.',
       features: [

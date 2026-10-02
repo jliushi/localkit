@@ -18,7 +18,7 @@ try {
       return cv.toDataURL('image/png').split(',')[1];
     }, lines);
     fs.writeFileSync(`test/fixtures/${name}.png`, Buffer.from(image, 'base64'));
-    if (name === 'ocr') fs.copyFileSync(`test/fixtures/${name}.png`, 'src/assets/samples/ocr.png');
+    if (['ocr', 'ocr-chinese', 'ocr-english'].includes(name)) fs.copyFileSync(`test/fixtures/${name}.png`, `src/assets/samples/${name}.png`);
   }
   const bottle = await page.evaluate(() => {
     const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512;

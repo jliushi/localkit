@@ -336,7 +336,8 @@ function vendor() {
   copy(path.join(nm, 'pdfjs-dist/build/pdf.worker.min.mjs'), 'vendor/pdfjs/pdf.worker.min.mjs');
   copy(path.join(nm, 'tesseract.js/dist/worker.min.js'), 'vendor/tesseract/worker.min.js');
   copy(path.join(nm, 'tesseract.js/LICENSE.md'), 'vendor/tesseract/LICENSE');
-  for (const f of fs.readdirSync(path.join(nm, 'tesseract.js-core')).filter(f => /-lstm\.wasm(?:\.js)?$/.test(f))) copy(path.join(nm, 'tesseract.js-core', f), `vendor/tesseract/core/${f}`);
+  // These loaders embed their WASM; do not ship unused legacy cores or duplicate .wasm binaries.
+  for (const f of fs.readdirSync(path.join(nm, 'tesseract.js-core')).filter(f => /-lstm\.wasm\.js$/.test(f))) copy(path.join(nm, 'tesseract.js-core', f), `vendor/tesseract/core/${f}`);
   copy(path.join(nm, 'tesseract.js-core/LICENSE'), 'vendor/tesseract/core/LICENSE');
   for (const lang of ['eng', 'chi_sim', 'chi_tra', 'fra', 'deu', 'spa']) {
     copy(path.join(nm, `@tesseract.js-data/${lang}/4.0.0_best_int/${lang}.traineddata.gz`), `vendor/tesseract/lang/${lang}.traineddata.gz`);
