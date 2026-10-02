@@ -46,12 +46,12 @@ export function guessLanguage(texts) {
   return Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
 }
 
-async function modelHost(m) {
+async function modelHost(m, signal) {
   for (const host of ['https://huggingface.co/', 'https://hf-mirror.com/']) {
     try {
-      const res = await fetch(`${host}${m}/resolve/main/config.json`, { signal: AbortSignal.timeout(6000) });
+      const res = await fetch(`${host}${m}/resolve/main/config.json`, { signal: AbortSignal.any([signal, AbortSignal.timeout(6000)]) });
       if (res.ok) return host;
-    } catch { /* next */ }
+    } catch { if (signal.aborted) throw signal.reason; }
   }
   return 'https://huggingface.co/';
 }
@@ -63,14 +63,16 @@ let worker = null;
  */
 export function translate(texts, src, dst, onEvent) {
   const models = route(src, dst);
-  let cancel;
+  const controller = new AbortController();
+  let rejectCurrent;
   const promise = (async () => {
     if (!models) throw new Error(`No translation model for ${src} → ${dst}`);
     if (!models.length) return texts.slice();
-    const host = await modelHost(models[0]);
+    const host = await modelHost(models[0], controller.signal);
+    controller.signal.throwIfAborted();
     worker ||= new Worker(`${LK.base}/assets/js/translate.worker.js`, { type: 'module' });
     const out = await new Promise((resolve, reject) => {
-      cancel = () => { worker?.terminate(); worker = null; reject(new DOMException('canceled', 'AbortError')); };
+      rejectCurrent = reject;
       worker.onmessage = ({ data }) => {
         if (data.type === 'result') resolve(data.texts);
         else if (data.type === 'error') reject(new Error(data.message));
@@ -82,10 +84,17 @@ export function translate(texts, src, dst, onEvent) {
     if (dst === 'zh') {
       // OPUS-MT sometimes mixes Traditional characters into Chinese output.
       const OpenCC = await import('opencc-js/t2cn');
+      controller.signal.throwIfAborted();
       const conv = OpenCC.Converter({ from: 't', to: 'cn' });
       return out.map((x) => conv(x));
     }
     return out;
   })();
-  return { promise, cancel: () => cancel?.() };
+  return { promise, cancel: () => {
+    const error = new DOMException('canceled', 'AbortError');
+    controller.abort(error);
+    worker?.terminate();
+    worker = null;
+    rejectCurrent?.(error);
+  } };
 }
