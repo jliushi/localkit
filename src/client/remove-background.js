@@ -2,7 +2,7 @@ import { $, $$, t, c, el, LK, icon, filePicker, progress, alertBox, errorText, d
 import { IMAGE_ACCEPT, decodeImage, drawRotated, toBlob } from './image-core.js';
 import { modelHost, hasWebGpu } from './model-host.js';
 
-const MODEL_IDS = { birefnet: 'onnx-community/BiRefNet_lite-ONNX', modnet: 'Xenova/modnet' };
+const MODEL_IDS = { modnet: 'Xenova/modnet' };
 const MAX_SIDE = 4096; // longest side we keep; larger photos are scaled down before cutting out
 
 const items = []; // { file, src (canvas), cut (canvas|null), error, busy, node, view, device }
@@ -94,7 +94,7 @@ async function runQueue() {
   try {
     task = progress($('#rb-task'), { title: t('connecting'), onCancel: () => { cancelFlag = true; stopWorker(); } });
     const name = model();
-    const [host, gpu] = await Promise.all([modelHost(MODEL_IDS[name]), $('#rb-engine').value === 'auto' ? hasWebGpu() : false]);
+    const [host, gpu] = await Promise.all([name === 'u2netp' ? '' : modelHost(MODEL_IDS[name]), $('#rb-engine').value === 'auto' ? hasWebGpu() : false]);
     let device = gpu ? 'webgpu' : 'wasm';
     const total = items.filter((x) => !x.cut && !x.error).length;
     let n = 0;
@@ -196,7 +196,7 @@ function render(it) {
 }
 
 function removeBtn(it) {
-  return el('button', { class: 'btn ghost sm icon', title: c('remove'), 'aria-label': c('remove'), onclick: () => { items.splice(items.indexOf(it), 1); it.node.remove(); summary(); } }, icon('x'));
+  return el('button', { class: 'btn ghost sm icon', disabled: it.busy, title: c('remove'), 'aria-label': c('remove'), onclick: () => { items.splice(items.indexOf(it), 1); it.node.remove(); summary(); } }, icon('x'));
 }
 
 function summary() {
@@ -204,6 +204,7 @@ function summary() {
   $('#rb-work').hidden = items.length === 0;
   $('#rb-pick').hidden = items.length > 0;
   $('#rb-zip').hidden = done < 2;
+  $('#rb-retry').hidden = running || !items.some(x => !x.cut);
   $('#rb-summary').textContent = done ? t('summary', done, items.length) : '';
   $('#rb-fmt').hidden = !bgColor();
 }
@@ -251,6 +252,10 @@ $('#rb-work').addEventListener('change', (e) => {
   }
 });
 $('#rb-color').addEventListener('input', recolor);
+$('#rb-retry').addEventListener('click', () => {
+  for (const it of items) if (!it.cut && it.src.width > 4) { it.error = null; render(it); }
+  runQueue();
+});
 $('#rb-engine').addEventListener('change', () => { stopWorker(); restart(); });
 $('#rb-zip').addEventListener('click', async () => {
   const files = [];

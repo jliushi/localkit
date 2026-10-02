@@ -4,8 +4,8 @@
 import { AutoModel, AutoProcessor, RawImage, env } from '@huggingface/transformers';
 
 const MODELS = {
-  // MIT licence. fp16 weights (≈115 MB) on WebGPU, fp32 (≈224 MB) on the CPU/WASM build, which has no fp16 kernels.
-  birefnet: { id: 'onnx-community/BiRefNet_lite-ONNX', dtype: { webgpu: 'fp16', wasm: 'fp32' }, sigmoid: true },
+  // Apache-2.0; the small U²-Net weights are hosted with the site (4.6 MB).
+  u2netp: { id: 'u2netp', bytes: 4574861, dtype: { webgpu: 'fp32', wasm: 'fp32' }, normalize: true },
   // Apache-2.0 licence, portraits only. 6.6 MB 8-bit weights on the CPU, 26 MB fp32 on WebGPU.
   modnet: { id: 'Xenova/modnet', dtype: { webgpu: 'fp32', wasm: 'uint8' }, sigmoid: false },
 };
@@ -14,6 +14,7 @@ let current = { key: null, model: null, processor: null };
 
 function configure({ base, host }) {
   env.allowLocalModels = false;
+  env.localModelPath = `${base}/assets/models/`;
   env.remoteHost = host;
   env.backends.onnx.wasm.wasmPaths = {
     mjs: `${base}/vendor/ort/ort-wasm-simd-threaded.asyncify.mjs`,
@@ -25,18 +26,22 @@ async function load(name, device, post) {
   const key = `${name}|${device}`;
   if (current.key === key) return current;
   const spec = MODELS[name];
+  env.allowLocalModels = name === 'u2netp';
+  env.allowRemoteModels = name !== 'u2netp';
   const files = new Map();
   const progress_callback = (p) => {
-    if (p.status === 'progress' && p.total) {
-      files.set(p.file, [p.loaded, p.total]);
+    const totalBytes = p.total || (p.file?.endsWith('.onnx') ? spec.bytes : 0);
+    if (p.status === 'progress' && totalBytes) {
+      files.set(p.file, [p.loaded, totalBytes]);
       let loaded = 0, total = 0;
       for (const [l, t] of files.values()) { loaded += l; total += t; }
       post({ type: 'download', loaded, total });
     }
   };
+  await current.model?.dispose();
   current = { key: null, model: null, processor: null };
   const [model, processor] = await Promise.all([
-    AutoModel.from_pretrained(spec.id, { device, dtype: spec.dtype[device], progress_callback }),
+    AutoModel.from_pretrained(spec.id, { device, dtype: spec.dtype[device], progress_callback, session_options: device === 'wasm' ? { enableCpuMemArena: false, enableMemPattern: false } : {} }),
     AutoProcessor.from_pretrained(spec.id),
   ]);
   current = { key, model, processor };
@@ -49,7 +54,11 @@ async function matte({ model, processor }, name, rgba, width, height) {
   const out = await model({ [model.sessions.model.inputNames[0]]: pixel_values });
   let t = out[model.sessions.model.outputNames[0]] ?? Object.values(out)[0];
   t = t[0];
-  if (MODELS[name].sigmoid) t = t.sigmoid();
+  if (MODELS[name].normalize) {
+    let lo = Infinity, hi = -Infinity;
+    for (const v of t.data) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    if (hi > lo) t = t.sub(lo).div(hi - lo);
+  }
   const mask = await RawImage.fromTensor(t.mul(255).clamp_(0, 255).to('uint8')).resize(width, height);
   return mask.data;
 }

@@ -821,7 +821,7 @@ function rgbaOf(file) {
   return { w, h, px: (x, y) => [...buf.subarray((y * w + x) * 4, (y * w + x) * 4 + 4)] };
 }
 
-await test('remove-background:birefnet-transparent', async () => {
+await test('remove-background:general-transparent', async () => {
   const page = await open('/remove-background/');
   await upload(page, '#rb-pick', ['portrait.jpg']);
   await page.waitForSelector('#rb-grid .rb-view', { timeout: 600000 });
@@ -855,6 +855,97 @@ await test('remove-background:modnet-blue-jpg-zh', async () => {
   assert(Math.abs(r - 0x43) < 12 && Math.abs(g - 0x8e) < 12 && Math.abs(b - 0xdb) < 12, `corner should be ID-photo blue: ${r},${g},${b}`);
   const [r2, g2, b2] = img.px(Math.round(img.w * 0.7), Math.round(img.h * 0.62));
   assert(r2 > 150 && g2 > 150, `suit should stay white-ish: ${r2},${g2},${b2}`);
+  return page;
+});
+
+// The old public Chinese traineddata includes eight legacy parameters that
+await test('remove-background:generated-batch-zip-cancel-mobile', async () => {
+  const page = await open('/remove-background/', 'zh', 390);
+  await upload(page, '#rb-pick', ['subject-bottle.png', 'portrait.jpg']);
+  await page.waitForSelector('#rb-task button');
+  await page.click('#rb-task button');
+  await page.waitForSelector('#rb-retry:not([hidden])', { timeout: 10000 });
+  await page.click('#rb-retry');
+  await page.waitForFunction(() => document.querySelectorAll('#rb-grid .rb-view').length === 2, { timeout: 90000 });
+  await page.click('#rb-grid .actions .btn');
+  const name = await waitDownload(page);
+  const img = rgbaOf(name);
+  for (const [x, y] of [[5, 5], [500, 5], [5, 500], [500, 500]]) assert(img.px(x, y)[3] < 40, `generated background alpha: ${img.px(x, y)}`);
+  assert(img.px(256, 256)[3] > 240, `generated subject alpha: ${img.px(256, 256)}`);
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'background mobile overflow');
+  await page.click('#rb-zip');
+  const zipName = await waitDownload(page, 2);
+  const { default: JSZip } = await import('jszip');
+  const zip = await JSZip.loadAsync(fs.readFileSync(outFile(zipName)));
+  assert(zip.file('subject-bottle-no-bg.png') && zip.file('portrait-no-bg.png'), 'batch ZIP entries');
+  return page;
+});
+
+// The old public Chinese traineddata includes eight legacy parameters that
+// Tesseract 7 reports as warnings through console.error. Keep actual errors fatal.
+function allowLegacyOcrWarnings(page) {
+  page.errors = page.errors.filter(s => !/^Warning: Parameter not found: (language_model_ngram_on|segsearch_max_char_wh_ratio|language_model_ngram_space_delimited_language|language_model_use_sigmoidal_certainty|language_model_ngram_nonmatch_score|classify_integer_matcher_multiplier|assume_fixed_pitch_char_segment|allow_blob_division)$/.test(s));
+}
+
+await test('image-to-text:english-edit-copy-txt', async () => {
+  const page = await open('/image-to-text/');
+  const external = [];
+  page.on('request', r => { if (r.url().startsWith('http') && new URL(r.url()).origin !== new URL(BASE).origin) external.push(r.url()); });
+  await upload(page, '#ocr-pick', ['ocr-english.png']);
+  await page.click('#ocr-go');
+  await page.waitForSelector('#ocr-list .ocr-text:not([disabled])', { timeout: 90000 });
+  const value = await page.$eval('#ocr-list .ocr-text', e => e.value);
+  assert(/LOCAL TEXT 2026/.test(value) && /Private images stay on your device/.test(value), value);
+  assert(Number(await page.$eval('.ocr-preview', e => e.dataset.boxes)) >= 2, 'line boxes');
+  await page.$eval('#ocr-list .ocr-text', e => { e.value += '\nEdited result'; e.dispatchEvent(new Event('input', { bubbles: true })); });
+  await page.click('#ocr-list .actions .btn');
+  const name = await waitDownload(page);
+  assert(name === 'ocr-english.txt' && fs.readFileSync(outFile(name), 'utf8').includes('Edited result'), 'edited text download');
+  await browser.defaultBrowserContext().overridePermissions(new URL(BASE).origin, ['clipboard-read', 'clipboard-write']);
+  await page.click('#ocr-list .actions .btn:nth-child(2)');
+  assert((await page.evaluate(() => navigator.clipboard.readText())).includes('Edited result'), 'copy text');
+  assert(external.length === 0, `unexpected external OCR requests: ${external}`);
+  allowLegacyOcrWarnings(page);
+  return page;
+});
+
+await test('image-to-text:chinese-batch-paste-mobile', async () => {
+  const page = await open('/image-to-text/', 'zh', 390);
+  assert(await page.$eval('#ocr-lang', e => e.value) === 'chi_sim+eng', 'Chinese default');
+  await page.evaluate(b64 => {
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const transfer = new DataTransfer(); transfer.items.add(new File([bytes], 'pasted-chinese.png', { type: 'image/png' }));
+    document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true }));
+  }, fs.readFileSync(fixture('ocr-chinese.png')).toString('base64'));
+  await page.waitForSelector('#ocr-list .ocr-item');
+  assert(await page.$$eval('#ocr-list .ocr-item', es => es.length) === 1, 'paste should add exactly one image');
+  await upload(page, '#ocr-more', ['ocr-english.png']);
+  await page.click('#ocr-go');
+  await page.waitForFunction(() => document.querySelectorAll('#ocr-list .ocr-text:not([disabled])').length === 2, { timeout: 90000 });
+  const values = await page.$$eval('#ocr-list .ocr-text', es => es.map(e => e.value));
+  assert(values[0].replace(/\s/g, '').includes('图片文字识别') && values[0].replace(/\s/g, '').includes('你好世界'), values[0]);
+  assert(values[1].includes('LOCAL TEXT 2026'), values[1]);
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'mobile overflow');
+  await page.click('#ocr-download-all');
+  const name = await waitDownload(page);
+  const result = fs.readFileSync(outFile(name), 'utf8');
+  assert(result.includes('pasted-chinese.png') && result.includes('ocr-english.png') && result.includes('你好世界'), result);
+  allowLegacyOcrWarnings(page);
+  return page;
+});
+
+await test('image-to-text:traditional-cancel-retry', async () => {
+  const page = await open('/image-to-text/', 'zh');
+  await page.select('#ocr-lang', 'chi_tra+eng');
+  await upload(page, '#ocr-pick', ['ocr-traditional.png']);
+  await page.click('#ocr-go');
+  await page.click('#ocr-task button');
+  await page.waitForFunction(() => !document.querySelector('#ocr-go').disabled, { timeout: 10000 });
+  await page.click('#ocr-go');
+  await page.waitForSelector('#ocr-list .ocr-text:not([disabled])', { timeout: 90000 });
+  const value = await page.$eval('#ocr-list .ocr-text', e => e.value.replace(/\s/g, ''));
+  assert(value.includes('圖片文字識別') && value.includes('歡迎使用本地工具'), value);
+  allowLegacyOcrWarnings(page);
   return page;
 });
 

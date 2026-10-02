@@ -329,6 +329,14 @@ function vendor() {
   for (const f of ['ort-wasm-simd-threaded.asyncify.mjs', 'ort-wasm-simd-threaded.asyncify.wasm']) copy(path.join(nm, 'onnxruntime-web/dist', f), `vendor/ort/${f}`);
   for (const f of ['ffmpeg-core.js', 'ffmpeg-core.wasm']) copy(path.join(nm, '@ffmpeg/core/dist/esm', f), `vendor/ffmpeg/${f}`);
   copy(path.join(nm, 'pdfjs-dist/build/pdf.worker.min.mjs'), 'vendor/pdfjs/pdf.worker.min.mjs');
+  copy(path.join(nm, 'tesseract.js/dist/worker.min.js'), 'vendor/tesseract/worker.min.js');
+  copy(path.join(nm, 'tesseract.js/LICENSE.md'), 'vendor/tesseract/LICENSE');
+  for (const f of fs.readdirSync(path.join(nm, 'tesseract.js-core')).filter(f => /-lstm\.wasm(?:\.js)?$/.test(f))) copy(path.join(nm, 'tesseract.js-core', f), `vendor/tesseract/core/${f}`);
+  copy(path.join(nm, 'tesseract.js-core/LICENSE'), 'vendor/tesseract/core/LICENSE');
+  for (const lang of ['eng', 'chi_sim', 'chi_tra', 'fra', 'deu', 'spa']) {
+    copy(path.join(nm, `@tesseract.js-data/${lang}/4.0.0_best_int/${lang}.traineddata.gz`), `vendor/tesseract/lang/${lang}.traineddata.gz`);
+    copy(path.join(nm, `@tesseract.js-data/${lang}/package.json`), `vendor/tesseract/lang/${lang}.package.json`);
+  }
   for (const f of fs.readdirSync(path.join(nm, 'pdfjs-dist/standard_fonts'))) copy(path.join(nm, 'pdfjs-dist/standard_fonts', f), `vendor/pdfjs/standard_fonts/${f}`);
 }
 
