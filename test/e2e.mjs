@@ -460,6 +460,7 @@ await test('edit-pdf:annotations-text-signature', async () => {
   assert(await page.evaluate(() => JSON.parse(localStorage.getItem('lk-pe-signatures') || '[]').length) === 1, 'signature remembered');
   const f = await peSave(page);
   const doc = await PDFDocument.load(fs.readFileSync(outFile(f)));
+  fs.copyFileSync(outFile(f), outFile('annot-check.pdf'));
   const p0 = doc.getPage(0);
   const res = p0.node.Resources();
   const xo = res.lookup(PDFName.of('XObject'));
