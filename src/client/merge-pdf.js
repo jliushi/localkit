@@ -202,6 +202,7 @@ function renderModeSelects() {
     const keep = ok.find((s) => s.id === prev);
     sel.value = String((keep || ok[def] || ok[0] || { id: '' }).id);
   }
+  if (ok.length > 1 && $('#pm-ia').value === $('#pm-ib').value) $('#pm-ib').value = String(ok.find((s) => String(s.id) !== $('#pm-ia').value).id);
 }
 
 function runsSummary() {
@@ -418,6 +419,7 @@ $('#pm-blank').addEventListener('click', () => {
   if (at > 0 && pages[at - 1].sel) { pages[at - 1].sel = false; }
   render();
 });
+$$('input[name="pm-size"]').forEach((r) => r.addEventListener('change', () => { const m = $$('input[name="pm-img"]').find((x) => x.value === r.value); if (m) m.checked = true; }));
 $('#pm-num').addEventListener('change', (e) => { $('#pm-numopts').hidden = !e.target.checked; });
 
 // ---------------------------------------------------------------- building the PDF

@@ -278,6 +278,46 @@ await test('ai-subtitle-generator:import-srt', async () => {
 
 // ================================================================ PDF
 
+// Fixtures for the page-level merge tests: every page carries its label as text and a unique width.
+async function labelledPdf(file, label, n) {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont('Helvetica');
+  for (let i = 1; i <= n; i++) {
+    const pg = doc.addPage([300 + i * 10 + (label === 'B' ? 100 : 0), 400]);
+    pg.drawText(`${label}${i}`, { x: 40, y: 200, size: 40, font });
+  }
+  fs.writeFileSync(path.join(FIX, file), await doc.save());
+}
+if (!only || only.has('merge-pdf')) {
+  await labelledPdf('lbl-a.pdf', 'A', 3);
+  await labelledPdf('lbl-b.pdf', 'B', 3);
+  fs.writeFileSync(path.join(FIX, 'broken.pdf'), 'this is definitely not a pdf file');
+}
+let pdfjsNode;
+async function pageTexts(file) {
+  pdfjsNode ||= await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const doc = await pdfjsNode.getDocument({ data: new Uint8Array(fs.readFileSync(outFile(file))), isEvalSupported: false }).promise;
+  const out = [];
+  for (let i = 1; i <= doc.numPages; i++) out.push((await (await doc.getPage(i)).getTextContent()).items.map((x) => x.str).join(' ').trim());
+  return out;
+}
+const pmUpload = async (page, files) => { await upload(page, '#pm-pick', files); await page.waitForFunction((n) => document.querySelectorAll('#pm-list li').length === n && !document.querySelector('#pm-list .spinner'), { timeout: 30000 }, files.length); };
+const pmSetName = (page, n) => page.$eval('#pm-name', (e, v) => { e.value = v; }, n);
+const pmRange = (page, i, v) => page.$eval(`#pm-list li:nth-child(${i}) .pm-range input`, (e, val) => { e.value = val; e.dispatchEvent(new Event('change')); }, v);
+const pmMerge = async (page, name) => { const n = page.downloads.length + 1; await pmSetName(page, name); await page.click('#pm-go'); await page.waitForSelector('#pm-result .result', { timeout: 60000 }); return waitDownload(page, n); };
+// Synthetic HTML5 drag & drop of page card `from` onto page card `to` (before = left half).
+const pmDrag = (page, from, to, before = true) => page.evaluate((f, t, bf) => {
+  const cards = document.querySelectorAll('#pm-pages .pg');
+  const src = cards[f], dst = cards[t];
+  const dt = new DataTransfer();
+  const r = dst.getBoundingClientRect();
+  const x = bf ? r.left + 4 : r.right - 4, y = r.top + r.height / 2;
+  src.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
+  dst.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: x, clientY: y }));
+  dst.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: x, clientY: y }));
+  src.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: dt }));
+}, from, to, before);
+
 await test('merge-pdf:merge', async () => {
   const page = await open('/merge-pdf/');
   await upload(page, '#pm-pick', ['a.pdf', 'b.pdf', 'sample.pdf']);
@@ -287,6 +327,95 @@ await test('merge-pdf:merge', async () => {
   await page.click('#pm-go');
   await page.waitForSelector('#pm-result .result');
   assert(await pdfPages(await waitDownload(page)) === 9, 'page count');
+  await page.waitForFunction(() => document.querySelectorAll('#pm-result .pm-prev canvas').length > 0, { timeout: 15000 });
+  return page;
+});
+
+await test('merge-pdf:ranges+page-drag+rotate+delete', async () => {
+  const page = await open('/merge-pdf/');
+  await pmUpload(page, ['lbl-a.pdf', 'lbl-b.pdf']);
+  await pmRange(page, 1, '1-2');
+  await pmRange(page, 2, '3');
+  await page.click('#pm-tab-pages');
+  await page.waitForFunction(() => document.querySelectorAll('#pm-pages .pg').length === 3);
+  await pmDrag(page, 2, 0, true); // B3 to the front, across files
+  await page.waitForFunction(() => document.querySelector('#pm-pages .pg:first-child .pm-src').innerText === 'lbl-b.pdf');
+  await page.click('#pm-pages .pg:nth-child(2) button[title="Rotate right"]'); // A1
+  await page.click('#pm-pages .pg:nth-child(3) button[title="Delete page"]'); // A2
+  await page.click('#pm-pages .pg:nth-child(1) button[title="Insert a blank page after this one"]');
+  const name = await pmMerge(page, 'ranges');
+  assert((await pdfPages(name)) === 3, 'three pages');
+  const texts = await pageTexts(name);
+  assert(texts[0] === 'B3' && texts[1] === '' && texts[2] === 'A1', `order ${texts}`);
+  const doc = await PDFDocument.load(fs.readFileSync(outFile(name)));
+  assert(doc.getPage(2).getRotation().angle === 90, 'A1 rotated');
+  assert(Math.round(doc.getPage(0).getWidth()) === 430, `B3 width ${doc.getPage(0).getWidth()}`);
+  await page.click('#pm-undo');
+  return page;
+});
+
+await test('merge-pdf:interleave-reverse', async () => {
+  const page = await open('/merge-pdf/');
+  await pmUpload(page, ['lbl-a.pdf', 'lbl-b.pdf']);
+  await page.click('input[name="pm-mode"][value="inter"] + span');
+  await page.click('#pm-irev');
+  await page.click('#pm-arrange');
+  const name = await pmMerge(page, 'inter');
+  const texts = await pageTexts(name);
+  assert(texts.join(',') === 'A1,B3,A2,B2,A3,B1', `interleave ${texts}`);
+  return page;
+});
+
+await test('merge-pdf:alternate+odd-even-ranges', async () => {
+  const page = await open('/merge-pdf/', 'zh');
+  await pmUpload(page, ['lbl-a.pdf', 'lbl-b.pdf']);
+  await pmRange(page, 1, 'odd');
+  await pmRange(page, 2, '偶数');
+  await page.click('input[name="pm-mode"][value="alt"] + span');
+  await page.click('#pm-arrange');
+  const texts = await pageTexts(await pmMerge(page, 'alt'));
+  assert(texts.join(',') === 'A1,B2,A3', `alt ${texts}`);
+  return page;
+});
+
+await test('merge-pdf:image+blank+normalise+numbers+bookmarks', async () => {
+  const page = await open('/merge-pdf/');
+  await pmUpload(page, ['lbl-a.pdf', 'sample.jpg', 'lbl-b.pdf']);
+  await pmRange(page, 1, '1');
+  await pmRange(page, 3, '2-3');
+  await page.click('#pm-tab-pages');
+  await page.click('#pm-pages .pg:nth-child(2)');
+  await page.click('#pm-blank');
+  await page.click('input[name="pm-size"][value="letter"] + span');
+  await page.click('#pm-bm');
+  await page.click('#pm-num');
+  await page.click('input[name="pm-nfmt"][value="of"] + span');
+  const name = await pmMerge(page, 'full');
+  const bytes = fs.readFileSync(outFile(name));
+  const doc = await PDFDocument.load(bytes);
+  assert(doc.getPageCount() === 5, `pages ${doc.getPageCount()}`);
+  const texts = await pageTexts(name);
+  assert(texts[0].startsWith('A1') && texts[0].includes('1 / 5') && texts[4].includes('5 / 5') && texts[3].startsWith('B2'), `texts ${JSON.stringify(texts)}`);
+  assert(texts[2].includes('3 / 5'), 'blank page numbered');
+  assert(Math.round(doc.getPage(1).getHeight()) === 792 || Math.round(doc.getPage(1).getWidth()) === 792, 'image page is A4/Letter-sized');
+  assert(doc.getPage(1).node.Resources().get(PDFName.of('XObject')), 'image on page 2');
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const pj = await pdfjs.getDocument({ data: new Uint8Array(bytes), isEvalSupported: false }).promise;
+  const outline = await pj.getOutline();
+  assert(outline && outline.map((o) => o.title).join(',') === 'lbl-a,sample,lbl-b', `outline ${JSON.stringify(outline?.map((o) => o.title))}`);
+  return page;
+});
+
+await test('merge-pdf:damaged-file-and-phone', async () => {
+  const page = await open('/merge-pdf/');
+  await page.setViewport({ width: 390, height: 800 });
+  await upload(page, '#pm-pick', ['broken.pdf', 'lbl-a.pdf']);
+  await page.waitForFunction(() => document.querySelectorAll('#pm-list li').length === 2 && !document.querySelector('#pm-list .spinner'), { timeout: 30000 });
+  assert(await page.$('#pm-list li.err'), 'broken file flagged');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert(overflow <= 1, `horizontal overflow ${overflow}`);
+  const name = await pmMerge(page, 'broken');
+  assert((await pdfPages(name)) === 3, 'only the readable file merged');
   return page;
 });
 
