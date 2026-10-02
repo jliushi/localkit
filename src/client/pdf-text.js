@@ -90,7 +90,7 @@ export function sampleColors(canvas, scale, box) {
   if (maxd < 60) return { fg: '#000000', bg: hex(...bg) };
   let n = 0, r = 0, g = 0, b = 0;
   for (const e of hist.values()) {
-    if (dist(e[1] / e[0], e[2] / e[0], e[3] / e[0]) > maxd * 0.7) { n += e[0]; r += e[1]; g += e[2]; b += e[3]; }
+    if (dist(e[1] / e[0], e[2] / e[0], e[3] / e[0]) > maxd * 0.85) { n += e[0]; r += e[1]; g += e[2]; b += e[3]; }
   }
   return { fg: hex(r / n, g / n, b / n), bg: hex(...bg) };
 }

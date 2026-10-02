@@ -467,9 +467,8 @@ table.diff tr.fold td { background: var(--bg-2); color: var(--muted); text-align
 @media (max-width: 860px) {
   .pe-body { grid-template-columns: minmax(0, 1fr); }
   .pe-panelbtn { display: inline-grid !important; }
-  .pe-side { display: none; position: fixed; z-index: 30; left: 0; top: 110px; bottom: 0; width: 170px; max-height: none; background: var(--card); border-right: 1px solid var(--border-strong); box-shadow: var(--shadow-lg); padding: 10px 6px; }
+  .pe-side { display: none; position: fixed; z-index: 30; left: 0; top: 176px; bottom: 0; width: 170px; max-height: none; background: var(--card); border-right: 1px solid var(--border-strong); box-shadow: var(--shadow-lg); padding: 10px 6px; }
   .pe-side.open { display: grid; }
-  .pe-top { top: 52px; }
   .pe-tools .pt { min-width: 44px; padding: 4px 4px 2px; }
   .ann .rs { width: 22px; height: 22px; right: -11px; bottom: -11px; }
   .ann .x { width: 28px; height: 28px; top: -16px; right: -16px; }
@@ -567,3 +566,18 @@ dialog h3 { margin-top: 0; }
 .pe-side { box-sizing: border-box; width: 100%; }
 .pe-side .btn { width: 100%; justify-content: center; padding-inline: 8px; font-size: .85rem; }
 .pe-thumbs { min-width: 0; }
+@media (max-width: 860px) {
+  .pe-props { flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; }
+  .pe-props .grp, .pe-props .ib, .pe-props .btn { flex: none; }
+  .pe-props .grow { display: none; }
+  .pe-props #pe-save { order: -1; padding: 7px 14px; }
+}
+@media (max-width: 860px) { .pe-props #pe-panel { order: -1; } }
+@media (max-width: 860px) {
+  .pe-side { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: none; border-right: 0; border-top: 1px solid var(--border-strong); padding: 8px 10px; grid-auto-flow: column; grid-template-columns: minmax(0, 1fr) auto; align-items: center; justify-items: stretch; }
+  .pe-side.open { display: grid; }
+  .pe-thumbs { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 4px; }
+  .pe-thumbs .th { width: 120px; flex: none; }
+  .pe-side .btn { width: auto; }
+  .pe-side #pe-pagecount { display: none; }
+}

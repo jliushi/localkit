@@ -452,7 +452,7 @@ export async function buildPdf(state, onProgress = () => {}) {
     else page.setRotation(degrees(pg.rot % 360));
   }
 
-  if (form?.flatten) { try { pdf.getForm().flatten(); } catch { /* no form */ } }
+  if (form?.flatten) { try { pdf.getForm().flatten(); } catch (e) { console.error('flatten failed', e); } }
 
   // --- page order: remove everything, add back in order
   for (let i = pdf.getPageCount() - 1; i >= 0; i--) pdf.removePage(i);

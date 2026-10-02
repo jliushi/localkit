@@ -524,7 +524,8 @@ await test('edit-pdf:fill-form', async () => {
   assert(form.getRadioGroup('plan').getSelected() === 'pro', 'radio');
   assert(form.getDropdown('country').getSelected()[0] === 'China', 'dropdown');
   // flatten: values become page content
-  await page.click('#pe-flatten');
+  fs.rmSync(outFile(f));
+  await page.$eval('#pe-flatten', (e) => e.click());
   const g = await peSave(page, 2);
   const flat = await PDFDocument.load(fs.readFileSync(outFile(g)));
   assert(flat.getForm().getFields().length === 0, 'flattened');

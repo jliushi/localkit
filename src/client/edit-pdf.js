@@ -1092,7 +1092,7 @@ async function detectForm(buf) {
     const info = { name: f.getName(), kind, widgets, readOnly: f.isReadOnly() };
     if (kind === 'text') { info.value = f.getText() || ''; info.multiline = f.isMultiline(); info.maxLength = f.getMaxLength(); }
     if (kind === 'check') info.value = f.isChecked();
-    if (kind === 'radio') { info.value = f.getSelected() || ''; }
+    if (kind === 'radio') { info.value = f.getSelected() || ''; const opts = f.getOptions(); info.widgets.forEach((w, i) => { w.on = opts[i] ?? w.on; }); }
     if (kind === 'select') { info.options = f.getOptions(); info.value = f.getSelected()[0] || ''; }
     out.push(info);
   }
