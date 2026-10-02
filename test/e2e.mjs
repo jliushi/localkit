@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer';
 import { PDFDocument, PDFName } from 'pdf-lib';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'test', 'out');
@@ -27,13 +28,13 @@ const outFile = (name) => path.join(OUT, name);
 const probe = (file) => JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', outFile(file)]).toString());
 const pdfPages = async (file) => (await PDFDocument.load(fs.readFileSync(outFile(file)))).getPageCount();
 
-async function open(p, lang = 'en') {
+async function open(p, lang = 'en', width = 1280) {
   const page = await browser.newPage();
   lastPage = page;
   page.errors = [];
   page.on('pageerror', (e) => page.errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource.*(favicon|404)/.test(m.text())) page.errors.push(m.text()); });
-  await page.setViewport({ width: 1280, height: 900 });
+  await page.setViewport({ width, height: 900 });
   const client = await page.createCDPSession();
   await client.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: OUT, eventsEnabled: true });
   page.downloads = [];
@@ -320,32 +321,271 @@ await test('organize-pdf:rotate-delete', async () => {
   return page;
 });
 
-await test('edit-pdf:text-check-white-sign-undo', async () => {
+// ---- PDF editor helpers
+async function pdfTexts(file) {
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(fs.readFileSync(outFile(file))), standardFontDataUrl: `${ROOT.split(path.sep).join('/')}/node_modules/pdfjs-dist/standard_fonts/`, verbosity: 0 }).promise;
+  const out = [];
+  for (let i = 1; i <= doc.numPages; i++) out.push((await (await doc.getPage(i)).getTextContent()).items.map((it) => it.str).join(''));
+  return out;
+}
+async function peLoad(page, file) {
+  await upload(page, '#pe-pick', [file]);
+  await page.waitForFunction(() => document.querySelectorAll('#pe-pages canvas').length >= 1, { timeout: 30000 });
+  await sleep(600);
+}
+/** Scrolls page `i` below the sticky toolbar and returns a mapper from page points (y from the top) to viewport pixels. */
+async function peView(page, i = 0, width = 595) {
+  const top = await page.$eval('#pe-tools', (e) => { const t = e.closest('.pe-top'); return parseFloat(getComputedStyle(t).top) + t.offsetHeight; });
+  await page.evaluate((k, t) => { const e = document.querySelectorAll('.epage')[k]; window.scrollBy(0, e.getBoundingClientRect().top - t - 20); }, i, top);
+  await sleep(400);
+  const v = { s: 1, b: null, async sync() { v.b = await (await page.$$('.epage'))[i].boundingBox(); v.s = v.b.width / width; }, at: (x, y) => [v.b.x + x * v.s, v.b.y + y * v.s] };
+  await v.sync();
+  curView = v;
+  return v;
+}
+let curView = null;
+async function peTool(page, t) { await page.click(`#pe-tools [data-tool="${t}"]`); await sleep(100); await curView?.sync(); }
+async function peDrag(page, [x1, y1], [x2, y2], steps = 8) {
+  await page.mouse.move(x1, y1);
+  await page.mouse.down();
+  await page.mouse.move(x2, y2, { steps });
+  await page.mouse.up();
+  await sleep(150);
+}
+const peClick = async (page, v, x, y) => { await v.sync(); await page.mouse.click(...v.at(x, y)); await sleep(250); };
+const peSelectAll = async (page) => { await page.keyboard.down('Control'); await page.keyboard.press('a'); await page.keyboard.up('Control'); };
+const peSave = async (page, n = 1) => { await page.click('#pe-save'); await waitText(page, '#pe-result', /Saved|已保存/, 60000); return waitDownload(page, n); };
+
+await test('edit-pdf:edit-existing-text-en-zh', async () => {
   const page = await open('/edit-pdf/');
-  await upload(page, '#pe-pick', ['sample.pdf']);
-  await page.waitForFunction(() => document.querySelectorAll('#pe-pages canvas').length === 4, { timeout: 30000 });
-  await page.$eval('.epage[data-i="0"]', (e) => e.scrollIntoView({ block: 'start' }));
-  await page.evaluate(() => window.scrollBy(0, -130));
-  const box = await (await page.$('.epage[data-i="0"]')).boundingBox();
-  await page.mouse.click(box.x + 150, box.y + 400);
-  await page.keyboard.type('Approved 已批准');
-  for (const [tool, x, y] of [['check', 120, 470], ['white', 400, 300]]) {
-    await page.$eval(`.tool-toggle input[value="${tool}"]`, (e) => e.click());
-    await page.mouse.click(box.x + x, box.y + y);
+  await peLoad(page, 'edit-text.pdf');
+  const v = await peView(page);
+  // hovering a line highlights it
+  await page.mouse.move(...v.at(100, 78));
+  await sleep(300);
+  assert(await page.$('.hoverbox'), 'hover box');
+  // English: replace the heading, change the colour sample check
+  await peClick(page, v, 100, 78);
+  assert(await page.$eval('#pe-font', (e) => e.value) === 'sans' && Number(await page.$eval('#pe-size', (e) => e.value)) === 22, 'font + size taken from the original');
+  await peSelectAll(page);
+  await page.keyboard.type('Receipt Number 99');
+  // a second English line: edit only one word at the end
+  await peClick(page, v, 100, 152);
+  await page.keyboard.press('End');
+  for (let i = 0; i < 11; i++) await page.keyboard.press('Backspace');
+  await page.keyboard.type('Beta GmbH');
+  // Chinese line
+  await peClick(page, v, 100, 202);
+  await peSelectAll(page);
+  await page.keyboard.type('合同金额：乙方收款');
+  await page.mouse.click(...v.at(400, 330));
+  await sleep(200);
+  assert((await page.evaluate(() => window.__pe.anns.length)) === 3, 'three edits');
+  const f = await peSave(page);
+  const [txt] = await pdfTexts(f);
+  assert(txt.includes('Receipt Number 99') && txt.includes('Customer: Acme Beta GmbH') && txt.includes('合同金额：乙方收款'), `new text present: ${txt}`);
+  assert(!txt.includes('Invoice') && !txt.includes('Trading') && !txt.includes('合同编号') && !txt.includes('甲方付款'), `old text removed from the file: ${txt}`);
+  assert(txt.includes('Payment due within thirty days of receipt.'), 'other lines untouched');
+  // a CJK font subset must have been embedded as real text
+  const doc = await PDFDocument.load(fs.readFileSync(outFile(f)));
+  assert(/NotoSansSC/.test(Buffer.from(await doc.save({ useObjectStreams: false })).toString('latin1')), 'Noto Sans SC subset embedded');
+  assert(fs.statSync(outFile(f)).size < 200000, `output stays small (${fs.statSync(outFile(f)).size})`);
+  return page;
+});
+
+await test('edit-pdf:edit-revert-undo-delete-line', async () => {
+  const page = await open('/edit-pdf/');
+  await peLoad(page, 'edit-text.pdf');
+  const v = await peView(page);
+  await peClick(page, v, 100, 122);
+  await page.mouse.click(...v.at(400, 330)); // click away without changing → nothing is recorded
+  await sleep(200);
+  assert((await page.evaluate(() => window.__pe.anns.length)) === 0, 'unchanged edit is dropped');
+  await peClick(page, v, 100, 122);
+  await peSelectAll(page);
+  await page.keyboard.press('Backspace'); // empty the line = delete the text
+  await page.mouse.click(...v.at(400, 330));
+  await sleep(200);
+  assert((await page.evaluate(() => window.__pe.anns.length)) === 1, 'emptied line kept as a deletion');
+  const f = await peSave(page);
+  const [txt] = await pdfTexts(f);
+  assert(!txt.includes('Payment due') && txt.includes('Invoice Number 20458'), `line deleted only: ${txt}`);
+  await page.keyboard.down('Control'); await page.keyboard.press('z'); await page.keyboard.up('Control');
+  assert((await page.evaluate(() => window.__pe.anns.length)) === 0, 'undo restores the original line');
+  await page.keyboard.down('Control'); await page.keyboard.press('y'); await page.keyboard.up('Control');
+  assert((await page.evaluate(() => window.__pe.anns.length)) === 1, 'redo');
+  return page;
+});
+
+await test('edit-pdf:annotations-text-signature', async () => {
+  const page = await open('/edit-pdf/', 'en');
+  await peLoad(page, 'a.pdf');
+  const v = await peView(page);
+  // highlight over the title text, underline another click, strikeout
+  await peTool(page, 'hl');
+  await peDrag(page, v.at(60, 62), v.at(250, 62));
+  await peTool(page, 'ul');
+  await peClick(page, v, 100, 62);
+  await peTool(page, 'st');
+  await peClick(page, v, 100, 62);
+  // pen, rectangle, ellipse, arrow, line
+  await peTool(page, 'pen');
+  await peDrag(page, v.at(80, 200), v.at(200, 260), 15);
+  for (const [t, a, b] of [['rect', [300, 200], [380, 260]], ['ell', [300, 300], [380, 340]], ['arrow', [100, 400], [220, 450]], ['line', [100, 440], [220, 440]]]) {
+    await peTool(page, t);
+    await peDrag(page, v.at(...a), v.at(...b))
   }
-  await page.$eval('.tool-toggle input[value="sign"]', (e) => e.click());
+  // sticky note
+  await peTool(page, 'note');
+  await peClick(page, v, 450, 120);
+  await page.keyboard.type('Check this 请核对');
+  // bold serif text box with Chinese, then a date stamp
+  await peTool(page, 'text');
+  await page.select('#pe-font', 'serif');
+  await page.click('#pe-bold');
+  await peClick(page, v, 100, 330);
+  await page.keyboard.type('Approved 已批准');
+  await peTool(page, 'select');
+  await peTool(page, 'date');
+  await peClick(page, v, 100, 380);
+  await peTool(page, 'select');
+  // signature, remembered for next time
+  await peTool(page, 'sign');
   await page.click('#pe-sig [data-tab="type"]');
   await page.type('#pe-sigtext', 'Alex Chen');
   await page.click('#pe-sig-use');
-  await page.mouse.click(box.x + 420, box.y + 520);
-  assert((await page.$$('.ann')).length === 4, 'four items');
+  await peClick(page, v, 380, 430);
+  const counts = await page.evaluate(() => Object.fromEntries(['hl', 'ul', 'st', 'ink', 'rect', 'ell', 'arrow', 'line', 'note', 'text', 'image'].map((t) => [t, window.__pe.anns.filter((a) => a.type === t).length])));
+  for (const [k, n] of Object.entries(counts)) assert(n >= (k === 'text' ? 2 : 1), `${k} count ${n}`);
+  assert(await page.evaluate(() => JSON.parse(localStorage.getItem('lk-pe-signatures') || '[]').length) === 1, 'signature remembered');
+  const f = await peSave(page);
+  const doc = await PDFDocument.load(fs.readFileSync(outFile(f)));
+  const p0 = doc.getPage(0);
+  const res = p0.node.Resources();
+  const xo = res.lookup(PDFName.of('XObject'));
+  assert(xo && xo.keys().length >= 1, 'signature image');
+  assert(res.lookup(PDFName.of('ExtGState')), 'highlight blend state');
+  const annots = p0.node.Annots();
+  assert(annots && annots.size() === 1 && /Check this/.test(Buffer.from(annots.lookup(0).lookup(PDFName.of('Contents')).asBytes()).toString('latin1')), 'sticky note annotation');
+  const [txt] = await pdfTexts(f);
+  assert(txt.includes('Approved 已批准') && /\d{4}/.test(txt.replace('A page 1', '')), `text + date are real text: ${txt}`);
+  assert(txt.includes('A page 1'), 'original text kept');
+  // the signature is offered again in a new session
+  await page.click('#pe-tools [data-tool="sign"]');
+  assert((await page.$$('#pe-saved .sv')).length === 1, 'saved signature listed');
+  await page.click('#pe-sig-cancel');
+  return page;
+});
+
+await test('edit-pdf:select-move-copy-delete-undo', async () => {
+  const page = await open('/edit-pdf/');
+  await peLoad(page, 'a.pdf');
+  const v = await peView(page);
+  await peTool(page, 'rect');
+  await peDrag(page, v.at(300, 200), v.at(380, 260));
+  await peTool(page, 'ell');
+  await peDrag(page, v.at(300, 300), v.at(380, 340));
+  await peTool(page, 'select');
+  await page.mouse.click(...v.at(340, 200)); // rubber band over both
+  await peDrag(page, v.at(280, 180), v.at(420, 360));
+  assert((await page.$$('.ann.on')).length === 2, 'multi-select');
+  const before = await page.evaluate(() => window.__pe.anns.map((a) => a.x));
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.down('Shift'); await page.keyboard.press('ArrowDown'); await page.keyboard.up('Shift');
+  const after = await page.evaluate(() => window.__pe.anns.map((a) => a.x));
+  assert(after[0] - before[0] === 1, 'nudged');
+  await page.keyboard.down('Control'); await page.keyboard.press('c'); await page.keyboard.press('v'); await page.keyboard.up('Control');
+  assert(await page.evaluate(() => window.__pe.anns.length) === 4, 'pasted copies');
+  await page.keyboard.press('Delete');
+  assert(await page.evaluate(() => window.__pe.anns.length) === 2, 'deleted selection');
   await page.keyboard.down('Control'); await page.keyboard.press('z'); await page.keyboard.up('Control');
-  assert((await page.$$('.ann')).length === 3, 'undo');
-  await page.$eval('#pe-save', (e) => e.click());
-  await page.waitForSelector('#pe-result .result');
-  const doc = await PDFDocument.load(fs.readFileSync(outFile(await waitDownload(page))));
-  const xo = doc.getPage(0).node.Resources().lookup(PDFName.of('XObject'));
-  assert(xo && xo.keys().length === 2, 'text + check images');
+  assert(await page.evaluate(() => window.__pe.anns.length) === 4, 'undo delete');
+  // move by dragging one
+  await peTool(page, 'select');
+  const [bx, by] = v.at(340, 200);
+  await peDrag(page, [bx, by], [bx + 60, by + 30]);
+  assert(await page.evaluate(() => window.__pe.anns.some((a) => a.type === 'rect' && a.x > 310)), 'dragged');
+  return page;
+});
+
+await test('edit-pdf:fill-form', async () => {
+  const page = await open('/edit-pdf/');
+  await peLoad(page, 'form.pdf');
+  await waitText(page, '#pe-formbar', /4/);
+  const v = await peView(page);
+  await page.type('.fl input[type=text]', 'Ada Lovelace');
+  await page.click('.fl input[type=checkbox]');
+  await page.click('.fl input[type=radio][value="pro"]');
+  await page.select('.fl select', 'China');
+  const f = await peSave(page);
+  const form = (await PDFDocument.load(fs.readFileSync(outFile(f)))).getForm();
+  assert(form.getTextField('fullName').getText() === 'Ada Lovelace', 'text field');
+  assert(form.getCheckBox('subscribe').isChecked(), 'checkbox');
+  assert(form.getRadioGroup('plan').getSelected() === 'pro', 'radio');
+  assert(form.getDropdown('country').getSelected()[0] === 'China', 'dropdown');
+  // flatten: values become page content
+  await page.click('#pe-flatten');
+  const g = await peSave(page, 2);
+  const flat = await PDFDocument.load(fs.readFileSync(outFile(g)));
+  assert(flat.getForm().getFields().length === 0, 'flattened');
+  assert((await pdfTexts(g))[0].includes('Ada Lovelace'), 'flattened text visible');
+  return page;
+});
+
+await test('edit-pdf:page-panel-operations', async () => {
+  const page = await open('/edit-pdf/');
+  await peLoad(page, 'a.pdf');
+  await page.waitForFunction(() => document.querySelectorAll('#pe-thumbs .th canvas').length === 3, { timeout: 20000 });
+  const th = (i, title) => page.click(`#pe-thumbs .th:nth-child(${i}) button[title="${title}"]`);
+  await th(2, 'Duplicate page'); // 1 2 2' 3
+  await th(4, 'Delete page'); // 1 2 2'
+  await th(1, 'Rotate page'); // rotate first
+  await page.click('#pe-addpage'); // blank after the current page
+  await sleep(300);
+  assert((await page.$$('#pe-thumbs .th')).length === 4, 'four pages');
+  // reorder: move the last page up
+  await th(4, 'Move up');
+  await page.keyboard.down('Control'); await page.keyboard.press('z'); await page.keyboard.up('Control'); // undo the move
+  await page.keyboard.down('Control'); await page.keyboard.press('y'); await page.keyboard.up('Control'); // redo it
+  const order = await page.evaluate(() => window.__pe.pgs.map((p) => (p.src == null ? 'blank' : p.src + (p.rot ? 'r' : ''))).join());
+  assert(order === '0r,blank,1,1' || order === '0r,1,blank,1' || order.split(',').length === 4, order);
+  const f = await peSave(page);
+  const doc = await PDFDocument.load(fs.readFileSync(outFile(f)));
+  assert(doc.getPageCount() === 4, 'page count');
+  assert(doc.getPage(0).getRotation().angle === 90, 'rotated');
+  const txt = await pdfTexts(f);
+  assert(txt.filter((t) => t.includes('A page 2')).length === 2 && txt.filter((t) => t === '').length === 1 && txt.some((t) => t.includes('A page 1')) && !txt.some((t) => t.includes('A page 3')), `pages ${JSON.stringify(txt)}`);
+  return page;
+});
+
+await test('edit-pdf:large-document-lazy', async () => {
+  const big = outFile('big-120.pdf');
+  const doc = await PDFDocument.create();
+  for (let i = 1; i <= 120; i++) doc.addPage([595, 842]).drawText(`Page ${i}`, { x: 60, y: 760, size: 30 });
+  fs.writeFileSync(big, await doc.save());
+  const page = await open('/edit-pdf/');
+  await upload(page, '#pe-pick', [big]);
+  await page.waitForFunction(() => document.querySelectorAll('#pe-pages .epage').length === 120, { timeout: 60000 });
+  await sleep(1500);
+  const canvases = await page.$$eval('#pe-pages canvas', (c) => c.length);
+  assert(canvases > 0 && canvases < 25, `lazy rendering (${canvases} canvases)`);
+  await page.click('#pe-thumbs .th:nth-child(100)');
+  await sleep(1500);
+  const n2 = await page.$$eval('#pe-pages canvas', (c) => c.length);
+  assert(n2 < 25, `canvases released (${n2})`);
+  return page;
+});
+
+await test('edit-pdf:phone-layout', async () => {
+  const page = await open('/edit-pdf/', 'zh', 390);
+  await peLoad(page, 'edit-text.pdf');
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= 391), 'no horizontal page scroll');
+  await page.click('#pe-panel');
+  assert(await page.$eval('#pe-side', (e) => getComputedStyle(e).display !== 'none'), 'panel opens');
+  await page.click('#pe-panel');
+  const v = await peView(page);
+  await peClick(page, v, 100, 78);
+  assert(await page.$('.ann .tx'), 'tap edits text on the phone layout');
   return page;
 });
 

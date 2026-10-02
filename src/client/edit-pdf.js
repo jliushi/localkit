@@ -609,7 +609,7 @@ function onPageDown(e, v) {
     case 'note': {
       e.preventDefault();
       const a = addAnn({ type: 'note', pg: pg.id, x: p.x, y: p.y, text: '', color });
-      requestAnimationFrame(() => $(`.ann[data-id="${a.id}"] .np`)?.focus());
+      requestAnimationFrame(() => $(`.ann[data-id="${a.id}"] .np`)?.focus({ preventScroll: true }));
       break;
     }
     case 'hl': case 'ul': case 'st': {
