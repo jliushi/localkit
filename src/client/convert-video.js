@@ -40,29 +40,41 @@ function update() {
         : alertBox(t('reencode', container === 'webm' ? 'VP9' : 'H.264'), 'warn'));
 }
 
+let loadSeq = 0;
 async function load(file) {
+  const seq = ++loadSeq;
   abort?.abort();
+  $('#cx-go').disabled = true;
+  $('#cx-mode').replaceChildren();
+  job = null;
   $('#cx-pick').hidden = true;
   $('#cx-work').hidden = false;
   $('#cx-result').replaceChildren();
   $('#cx-alert').replaceChildren();
   $('#cx-file').replaceChildren(fileCard({ file, meta: t('preparing') }));
   try {
-    job = await prepare(file);
+    const j = await prepare(file);
+    if (seq !== loadSeq) return;
+    job = j;
   } catch (e) {
+    if (seq !== loadSeq) return;
     $('#cx-alert').replaceChildren(alertBox(errorText(e)));
     return;
   }
-  $('#cx-file').replaceChildren(fileCard({ file, meta: `${metaLine(job.info)}${job.info.videoCodec ? ` · ${CODEC_NAME[job.info.videoCodec] || job.info.videoCodec}` : ''}`, thumb: await thumbnail(job), onChange: () => pick.open() }));
+  const thumb = await thumbnail(job);
+  if (seq !== loadSeq) return;
+  $('#cx-file').replaceChildren(fileCard({ file, meta: `${metaLine(job.info)}${job.info.videoCodec ? ` · ${CODEC_NAME[job.info.videoCodec] || job.info.videoCodec}` : ''}`, thumb, onChange: () => pick.open() }));
   // Preselect a sensible target: MP4 unless the file already is one.
   const ext = extOf(file.name);
   const preselect = ext === 'mp4' || ext === 'm4v' ? 'webm' : 'mp4';
   for (const r of $$('input[name="cx-fmt"]')) r.checked = r.value === preselect;
   if (job.legacy) $('#cx-alert').replaceChildren(alertBox(t('legacy'), 'info'));
   update();
+  $('#cx-go').disabled = false;
 }
 
 async function go() {
+  if (!job) return;
   const container = target();
   const file = job.file;
   const name = `${baseName(file.name)}.${container}`;

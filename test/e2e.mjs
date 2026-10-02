@@ -198,7 +198,8 @@ await test('convert-video:remux+reencode', async () => {
   const n1 = await waitDownload(page, 1);
   assert(probe(n1).format.format_name.includes('mp4'), 'mp4 container');
   await upload(page, '#cx-pick', ['clip-zh.mp4']);
-  await waitText(page, '#cx-mode', /re-encoding/);
+  // Wait for state unique to the new file (its card, Convert enabled), not the stale mode text of the previous file.
+  await page.waitForFunction(() => /clip-zh.mp4/.test(document.querySelector('#cx-file')?.innerText || '') && !document.querySelector('#cx-go').disabled && /re-encoding/.test(document.querySelector('#cx-mode')?.innerText || '') && !/Instant/.test(document.querySelector('#cx-mode')?.innerText || ''), { timeout: 60000, polling: 200 });
   await page.click('#cx-go');
   await waitText(page, '#cx-result', /WEBM/, 120000);
   await page.click('#cx-result .btn.lg');
@@ -210,7 +211,7 @@ await test('convert-video:remux+reencode', async () => {
 await test('convert-video:legacy-avi', async () => {
   const page = await open('/convert-video/');
   await upload(page, '#cx-pick', ['clip.avi']);
-  await page.waitForSelector('#cx-file .meta small');
+  await page.waitForFunction(() => /clip.avi/.test(document.querySelector('#cx-file')?.innerText || '') && !document.querySelector('#cx-go').disabled, { timeout: 60000, polling: 200 });
   await page.click('#cx-go');
   await page.waitForSelector('#cx-result .result', { timeout: 180000 });
   await page.click('#cx-result .btn.lg');
@@ -687,25 +688,209 @@ await test('convert-image:ico+webp', async () => {
 
 // ================================================================ documents & text
 
-await test('resume-builder:example+pdf', async () => {
-  const page = await open('/resume-builder/', 'zh');
-  await page.click('#rb-example');
-  await page.waitForFunction(() => document.querySelector('#rb-paper h1')?.textContent === '陈晓明');
-  await page.select('select[name="template"]', 'modern');
-  await page.waitForSelector('#rb-paper .cv-modern .cv-side');
+// ---- resume builder v2
+const rvOpen = async (lang, start = 'pm', mobile = false) => {
+  const page = await open('/resume-builder/', lang);
+  if (mobile) { await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true }); await page.reload({ waitUntil: 'networkidle0' }); }
+  await page.waitForSelector('.rv-host .rv-sheet');
+  await sleep(500);
+  if (!(await page.$('#rv-starter[open]'))) {
+    await page.click('#rv-docs');
+    await page.evaluate(() => [...document.querySelectorAll('.rv-menu button')].find((b) => /New|新建/.test(b.textContent)).click());
+    await page.waitForSelector('#rv-starter[open]');
+  }
+  await page.click(`[data-start=${start}]`);
+  await sleep(300);
+  await page.waitForSelector('.rv-host .rv-sheet .rv-name');
+  return page;
+};
+const rvReplace = async (page, sel, str) => {
+  await page.click(sel);
+  await page.keyboard.down('Control'); await page.keyboard.press('a'); await page.keyboard.up('Control');
+  await page.keyboard.type(str);
+};
+const rvDoc = (page) => page.evaluate(() => JSON.parse(JSON.stringify(window.__rv.doc())));
+const rvMenu = async (page, openSel, label) => {
+  await page.evaluate(() => window.scrollTo(0, document.querySelector('.rv').getBoundingClientRect().top + scrollY - 90));
+  await sleep(100);
+  await page.click(openSel);
+  await page.waitForSelector('.rv-menu');
+  const ok = await page.evaluate((l) => { const b = [...document.querySelectorAll('.rv-menu button')].find((x) => x.textContent.includes(l)); if (b) b.click(); return !!b; }, label);
+  assert(ok, `menu item ${label}`);
+};
+const pdfText = async (file) => {
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(fs.readFileSync(file)), useSystemFonts: true, verbosity: 0 }).promise;
+  let out = '';
+  for (let i = 1; i <= doc.numPages; i++) out += (await (await doc.getPage(i)).getTextContent()).items.map((t) => t.str).join(' ') + '\n';
+  return { pages: doc.numPages, text: out };
+};
+
+await test('resume-builder:create+edit-in-place+template', async () => {
+  const page = await rvOpen('zh', 'pm');
+  assert((await text(page, '.rv-host .rv-sheet .rv-name')) === '林雅婷', 'sample name');
+  assert((await page.$$('.rv-host .rv-sheet .rv-mod')).length >= 5, 'modules rendered');
+  // edit directly on the sheet
+  await rvReplace(page, '.rv-host .rv-sheet .rv-name .f', '张三丰');
+  await sleep(500);
+  assert((await text(page, '.rv-host .rv-sheet .rv-name')) === '张三丰', 'sheet text');
+  assert(await page.$$eval('.rp input[data-ref]', (els) => els.some((e) => e.value === '张三丰')), 'side panel synced from sheet');
+  // bold via floating toolbar
+  const desc = '.rv-host .rv-sheet .rv-entry .rv-desc li';
+  await page.click(desc, { clickCount: 3 });
+  await page.keyboard.down('Control'); await page.keyboard.press('a'); await page.keyboard.up('Control');
+  await page.waitForSelector('.rv-ftb:not([hidden])');
+  await page.click('.rv-ftb [data-cmd=bold]');
+  await sleep(300);
+  assert((await rvDoc(page)).modules.some((m) => (m.entries || []).some((e) => /<(b|strong)>/.test(e.desc))), 'bold stored');
+  // edit in the panel and see it on the sheet
+  const sel = await page.$eval('.rp input[data-ref$="|headline"]', (e) => e.dataset.ref);
+  await page.$eval(`.rp input[data-ref="${sel}"]`, (e) => { e.focus(); e.select(); });
+  await page.keyboard.type('首席产品官');
+  await sleep(300);
+  assert((await text(page, '.rv-host .rv-sheet .rv-hl')) === '首席产品官', 'panel -> sheet');
+  // switch template: content unchanged
+  await page.click('.rp-tabs [data-tab=design]');
+  for (const t of ['banner', 'table', 'sidebar', 'tech', 'academic']) {
+    await page.click(`.rp-tpl[data-tpl=${t}]`);
+    await sleep(150);
+    assert(await page.$eval('.rv-host .rv-sheet', (e, id) => e.classList.contains(`t-${id}`), t), `template ${t}`);
+    assert(/张三丰/.test(await page.$eval('.rv-host .rv-sheet', (e) => e.innerText)), `content kept on ${t}`);
+  }
+  assert((await page.$$('.rp-tpl')).length >= 10, 'at least 10 templates');
+  // persistence
+  await sleep(600);
   await page.reload({ waitUntil: 'networkidle0' });
-  assert(await page.$eval('select[name="template"]', (e) => e.value) === 'modern', 'autosave');
-  await page.evaluate(() => {
-    const root = document.createElement('div');
-    root.id = 'print-root';
-    root.append(document.querySelector('#rb-paper .cv').cloneNode(true));
-    document.body.append(root);
-    document.body.classList.add('printing');
-  });
-  const pdf = await page.pdf({ preferCSSPageSize: true, printBackground: true });
-  assert((await PDFDocument.load(pdf)).getPageCount() === 1, 'one page');
+  await page.waitForSelector('.rv-host .rv-sheet .rv-name');
+  assert((await text(page, '.rv-host .rv-sheet .rv-name')) === '张三丰', 'autosave');
+  assert(await page.$eval('.rv-host .rv-sheet', (e) => e.classList.contains('t-academic')), 'template persisted');
   return page;
 });
+
+await test('resume-builder:modules+undo', async () => {
+  const page = await rvOpen('en', 'se');
+  const order = async () => (await rvDoc(page)).modules.map((m) => m.type).join();
+  const before = await order();
+  // move the 3rd module down via the on-page toolbar
+  await page.evaluate(() => { const mods = [...document.querySelectorAll('.rv-host .rv-sheet .rv-mod')]; mods[1].querySelector('[data-act=mdown]').click(); });
+  await sleep(200);
+  assert((await order()) !== before, 'module moved');
+  await page.click('#rv-undo');
+  await sleep(200);
+  assert((await order()) === before, 'undo restores order');
+  await page.click('#rv-redo');
+  await sleep(200);
+  assert((await order()) !== before, 'redo');
+  // drag a module in the panel (pointer events)
+  const g = await page.$$('.rp-mod .rp-grip:not(.off)');
+  await page.evaluate(() => window.scrollTo(0, document.querySelector('.rv').getBoundingClientRect().top + scrollY - 20));
+  await sleep(150);
+  const a = await g[1].boundingBox(), b = await g[3].boundingBox();
+  const o1 = await order();
+  await page.mouse.move(a.x + 5, a.y + 5); await page.mouse.down(); await page.mouse.move(a.x + 5, b.y + 60, { steps: 8 }); await page.mouse.up();
+  await sleep(300);
+  assert((await order()) !== o1, 'panel drag reorders');
+  // hide, rename, add custom module
+  await page.click('.rp-mod:nth-child(3) .rp-ib[title="Hide"]');
+  await sleep(200);
+  assert((await rvDoc(page)).modules.filter((m) => m.hidden).length === 1, 'hidden');
+  await page.click('.rp-addb:last-child');
+  await sleep(200);
+  const d = await rvDoc(page);
+  assert(d.modules[d.modules.length - 1].type === 'custom', 'custom module added');
+  await page.$eval('.rp-mod:last-of-type .rp-title', (e) => { e.focus(); e.select(); });
+  await page.keyboard.type('Publications');
+  await sleep(300);
+  assert(/publications/i.test(await page.$eval('.rv-host .rv-sheet', (e) => e.innerText)), 'renamed module on sheet');
+  // multiple resumes
+  const n0 = await page.evaluate(() => window.__rv.store.docs.length);
+  await rvMenu(page, '#rv-docs', 'Duplicate');
+  await sleep(300);
+  assert((await page.evaluate(() => window.__rv.store.docs.length)) === n0 + 1, 'duplicate resume');
+  return page;
+});
+
+await test('resume-builder:fit+phrases+check', async () => {
+  const page = await rvOpen('en', 'se');
+  await page.click('.rp-tabs [data-tab=design]');
+  await page.evaluate(() => { for (const [i, v] of [['fs', 16], ['lh', 2]]) { const el = [...document.querySelectorAll('.rp-sl')].find((s) => s.querySelector('input').min === (i === 'fs' ? '12' : '1.2')).querySelector('input'); el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); } });
+  await sleep(400);
+  const n0 = Number(await page.$eval('#rv-pages', (e) => e.dataset.n));
+  assert(n0 >= 2, `bold overflows (${n0})`);
+  await page.click('#rv-fit');
+  await sleep(500);
+  assert(Number(await page.$eval('#rv-pages', (e) => e.dataset.n)) === 1, 'fit to one page');
+  assert((await rvDoc(page)).style.fit === true, 'fit flag');
+  // writing help inserts into the document
+  await page.click('.rp-tabs [data-tab=assist]');
+  const before = JSON.stringify((await rvDoc(page)).modules);
+  await page.click('.rp-chip:not(.small)');
+  await sleep(300);
+  assert(JSON.stringify((await rvDoc(page)).modules) !== before, 'phrase inserted');
+  assert((await page.$$('.rp-checks li')).length >= 3, 'checklist');
+  assert(/placeholder/.test(await text(page, '.rp-checks')), 'check flags leftover brackets');
+  return page;
+});
+
+await test('resume-builder:export', async () => {
+  const page = await rvOpen('en', 'pm');
+  // PNG
+  await rvMenu(page, '#rv-export', 'PNG');
+  const png = await waitDownload(page, 1);
+  const buf = fs.readFileSync(outFile(png));
+  assert(buf.slice(1, 4).toString() === 'PNG', 'png signature');
+  assert(buf.readUInt32BE(16) === 1588 && buf.readUInt32BE(20) === 2244, `png size ${buf.readUInt32BE(16)}x${buf.readUInt32BE(20)}`);
+  // image PDF
+  await rvMenu(page, '#rv-export', 'image pages');
+  const pdf = await waitDownload(page, 2);
+  const lib = await PDFDocument.load(fs.readFileSync(outFile(pdf)));
+  const pn = Number(await page.$eval('#rv-pages', (e) => e.dataset.n));
+  assert(lib.getPageCount() === pn, `image pdf pages ${lib.getPageCount()} vs ${pn}`);
+  const { width, height } = lib.getPage(0).getSize();
+  assert(Math.abs(width - 595.28) < 1 && Math.abs(height - 841.89) < 1, 'A4 size');
+  // text PDF through the print path
+  await rvMenu(page, '#rv-export', 'selectable text');
+  await page.waitForSelector('#rv-print-go');
+  await page.click('#rv-print-go');
+  await page.waitForSelector('#rv-print .rv-page', { timeout: 5000 });
+  const printed = await page.pdf({ preferCSSPageSize: true, printBackground: true });
+  fs.writeFileSync(outFile('resume-print.pdf'), printed);
+  const info = await pdfText(outFile('resume-print.pdf'));
+  assert(info.pages === pn, `print pdf pages ${info.pages} vs ${pn}`);
+  assert(info.text.includes('Priya Raman') && /Lumen Analytics/.test(info.text), 'selectable text in pdf');
+  return page;
+});
+
+await test('resume-builder:import-export-json', async () => {
+  const page = await rvOpen('en', 'design');
+  await rvMenu(page, '#rv-docs', 'Export data');
+  const json = await waitDownload(page, 1);
+  const data = JSON.parse(fs.readFileSync(outFile(json), 'utf8'));
+  assert(data.v === 2 && data.modules.length > 4, 'json export');
+  const c0 = await page.evaluate(() => window.__rv.store.docs.length);
+  await rvMenu(page, '#rv-docs', 'Import data');
+  const input = await page.$('input[type=file][accept*=json]');
+  await input.uploadFile(outFile(json));
+  await sleep(500);
+  assert((await page.evaluate(() => window.__rv.store.docs.length)) === c0 + 1, 'imported as new resume');
+  return page;
+});
+
+await test('resume-builder:phone-390', async () => {
+  const page = await rvOpen('zh', 'grad', true);
+  const sw = await page.evaluate(() => document.documentElement.scrollWidth);
+  assert(sw <= 392, `no horizontal scroll (${sw})`);
+  await page.click('.rv-mseg [data-v=edit]');
+  await sleep(200);
+  assert(await page.$eval('.rv-panel', (e) => e.offsetParent !== null), 'panel visible on phone');
+  await page.$eval('.rp input[data-ref$="|name"]', (e) => { e.focus(); e.select(); });
+  await page.keyboard.type('王小明');
+  await page.click('.rv-mseg [data-v=sheet]');
+  await sleep(300);
+  assert((await text(page, '.rv-host .rv-sheet .rv-name')) === '王小明', 'panel edit on phone');
+  return page;
+});
+
 
 await test('compare-text:live', async () => {
   const page = await open('/compare-text/');

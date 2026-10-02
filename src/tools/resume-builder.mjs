@@ -5,342 +5,78 @@ export default {
   category: 'docs',
   iconName: 'file-user',
   color: '#9333ea',
-  related: ['edit-pdf', 'compress-pdf', 'compare-text'],
+  related: ['edit-pdf', 'compress-pdf', 'jpg-to-pdf'],
   appCategory: 'BusinessApplication',
   strings: {
-  "en": {
-    "name": "Resume Builder",
-    "short": "Write a professional resume with live preview and download a PDF.",
-    "keywords": [
-      "cv maker",
-      "resume maker",
-      "free resume template",
-      "create resume",
-      "resume pdf",
-      "curriculum vitae"
-    ],
-    "title": "Free Resume Builder — ATS-Friendly PDF, No Sign-up, No Watermark",
-    "desc": "Build a professional resume: fill in the form, pick a template, see a live A4 preview, download an ATS-friendly PDF. Free, no sign-up, no watermark.",
-    "h1": "Free resume builder with PDF download",
-    "sub": "A free online resume builder: fill in the form, choose a template and accent colour, and watch the resume update as you type. Download a crisp, text-based PDF that recruiters and applicant tracking systems (ATS) can read — no account, no watermark.",
-    "features": [
-      [
-        "layout-template",
-        "Three clean templates",
-        "Classic for ATS-heavy applications, Modern with a coloured sidebar and photo, Compact to fit more on one page."
+    en: {
+      name: 'Resume Builder',
+      short: 'Edit your resume right on the page, pick from 12 templates and export a PDF or image. Private, no sign-up.',
+      keywords: ['resume builder', 'cv maker', 'free resume template', 'resume pdf', 'one page resume', 'resume editor'],
+      title: 'Free Resume Builder: 12 Templates, PDF Export, No Sign-up',
+      desc: 'Edit your resume directly on an A4 preview with 12 templates, drag-and-drop sections, photo crop and one-page fit. Export PDF, PNG or JPG. Runs in your browser.',
+      h1: 'Free resume builder: edit on the page, export PDF',
+      sub: 'Click any text on the A4 page to edit it in place, or use the side panel. Choose from 12 templates, reorder sections by dragging, crop your photo, squeeze everything onto one page with one click, then export a PDF with selectable text or a PNG/JPG image. Everything runs in your browser, so your details are never uploaded and there is no account or watermark.',
+      features: [
+        ['layout-template', '12 templates, your content kept', 'Single column, sidebar, timeline, banner, formal form, developer, academic and more. Switching template never changes your text.'],
+        ['file-user', 'Edit on the page or in the panel', 'Type directly on the resume with a bold/italic/bullet toolbar, or fill the structured panel. Both stay in sync, and the panel works well on phones.'],
+        ['shield-check', 'Private by design', 'Your resumes are saved only in this browser. Export or import them as JSON to move between devices.'],
       ],
-      [
-        "save",
-        "Auto-saved drafts",
-        "Everything you type is saved in this browser, so you can close the tab and continue later. Export your data to move devices."
+      howToTitle: 'How to make a resume',
+      steps: [
+        'Press New resume and pick an example for your role, or start blank.',
+        'Click text on the page to edit it. Add, hide, rename and drag sections; upload and crop a photo if you want one.',
+        'Open Design to try templates, colours, fonts and spacing, and turn on Fit to one page if you are slightly over.',
+        'Press Export: PDF (opens the print dialog, choose Save as PDF) for selectable text, or PNG/JPG/image PDF for an exact picture.',
       ],
-      [
-        "file-check",
-        "ATS-friendly PDF",
-        "The PDF contains real, selectable text — not a picture — so recruiters can search it and tracking systems can parse it."
-      ]
-    ],
-    "steps": [
-      "Fill in the form, or press \"Load example\" to start from a sample.",
-      "Choose a template and colour; the preview updates live and shows where pages break.",
-      "Press Download PDF, then save the result as PDF."
-    ],
-    "guide": [
-      [
-        "What makes a good resume",
-        {
-          "list": [
-            "One page for under ~10 years of experience; two at most otherwise.",
-            "Start bullet points with an action verb and add numbers: \"Cut onboarding time by 30%\".",
-            "Put the most relevant experience first and drop very old or unrelated jobs.",
-            "Use the job ad's own keywords in your skills and experience — tracking systems match on them."
-          ]
-        }
+      guide: [
+        ['What makes a good resume', { list: ['One page for under about 10 years of experience; two at most otherwise.', 'Start each bullet with an action verb and add numbers: "Cut onboarding time by 30%".', 'Put the most relevant experience first and drop very old or unrelated jobs.', 'Use keywords from the job ad in your skills and experience; tracking systems match on them.'] }],
+        ['How PDF export works', 'The "PDF — selectable text" option uses your browser\'s print function on pre-paginated pages, so the file contains real text and breaks pages exactly where the preview shows. The "image pages" options render each page to a picture, which looks identical everywhere but cannot be searched or copied.'],
+        ['Which template should I choose?', { table: [['Template', 'Best for'], ['Classic, International', 'Corporate jobs and online application systems'], ['Sidebar, Elegant', 'Roles where a photo and a skills column help'], ['Banner, Bold, Timeline', 'Creative, marketing and product roles'], ['Compact, Minimal', 'Fitting a lot on one clean page'], ['Form', 'Formal applications in China, with a photo cell'], ['Developer, Academic', 'Engineering portfolios and research CVs']] }],
       ],
-      [
-        "Which template should I choose?",
-        {
-          "table": [
-            [
-              "Template",
-              "Best for"
-            ],
-            [
-              "Classic",
-              "Corporate jobs and online application systems (most ATS-friendly)"
-            ],
-            [
-              "Modern",
-              "Creative, marketing and product roles; when a photo is expected"
-            ],
-            [
-              "Compact",
-              "Long experience you want to fit on one page"
-            ]
-          ]
-        }
-      ]
-    ],
-    "faq": [
-      [
-        "Is this resume builder really free?",
-        "Yes — no sign-up, no payment, and no watermark on the PDF."
+      faq: [
+        ['Is this resume builder really free?', 'Yes. There is no sign-up, no payment and no watermark.'],
+        ['Where is my information stored?', 'Only in your browser\'s local storage on this device. Nothing is uploaded. Use Export data (.json) to back up or move a resume to another computer.'],
+        ['Will applicant tracking systems read my PDF?', 'The "PDF — selectable text" export contains real text, so systems can parse it. For best results use a single-column template such as Classic or International and standard section names.'],
+        ['How do I get a PDF on my phone?', 'Use Export, then PDF. Your phone\'s print sheet lets you save or share it as a PDF. The "image pages" PDF downloads directly like any other file.'],
+        ['Can I make a Chinese or bilingual resume?', 'Yes. Switch the site to 中文 for Chinese section titles and templates such as the formal form, and write in any language you like. All section titles can be renamed.'],
       ],
-      [
-        "Where is my information stored?",
-        "Only in your browser's local storage on this device. Nothing is sent to a server. Use \"Export data\" to move your resume to another computer."
+      ui: {},
+    },
+    zh: {
+      name: '简历制作',
+      short: '在 A4 页面上直接编辑，12 套模板，一键排成一页纸，导出 PDF 或图片。本地处理，无需注册。',
+      keywords: ['简历制作', '免费简历模板', '在线简历', '简历生成器', '一页纸简历', '简历PDF', '求职简历'],
+      title: '免费在线简历制作：12 套模板，导出 PDF，无需注册',
+      desc: '在 A4 页面上直接点击编辑，12 套简历模板，模块拖拽排序、照片裁剪、一键排成一页纸，支持导出 PDF、PNG、JPG。全程在浏览器本地完成，无水印。',
+      h1: '免费在线简历制作：所见即所得，导出 PDF',
+      sub: '直接点击 A4 页面上的文字就能编辑，也可以用侧边栏表单填写。12 套模板随意切换，内容不变；模块可隐藏、重命名、拖动排序；照片支持裁剪成方形、2:3 证件照或圆形；一键排成一页纸，再导出可选中文字的 PDF 或 PNG/JPG 图片。所有内容只在你的浏览器里处理，不上传、不注册、无水印。',
+      features: [
+        ['layout-template', '12 套模板，内容不变', '经典单栏、侧栏、时间轴、创意色块、表格式、技术极客、学术等，切换模板不会改动你写的内容。'],
+        ['file-user', '页面直接编辑 + 侧边栏', '在简历上直接输入并用工具条加粗、斜体、列表；也可使用结构化侧边栏，两边实时同步，手机上同样好用。'],
+        ['shield-check', '隐私优先', '简历只保存在本机浏览器里，可导出 / 导入 JSON 在不同设备间迁移。'],
       ],
-      [
-        "Will applicant tracking systems (ATS) read my resume?",
-        "Yes. The PDF contains real text. For the best results use the Classic template and standard section names."
+      howToTitle: '如何制作简历',
+      steps: [
+        '点击“新建简历”，选择与你岗位相近的示例，或从空白开始。',
+        '点击页面上的文字直接修改；可添加、隐藏、重命名并拖动模块，需要时上传并裁剪照片。',
+        '在“模板样式”中尝试模板、主题色、字体与间距；内容略超一页时打开“一页纸”。',
+        '点击“导出”：选“PDF（可选中文字）”会打开打印窗口，目标选“另存为 PDF”；也可导出 PNG / JPG / 图片版 PDF。',
       ],
-      [
-        "How do I get a PDF on my phone?",
-        "Press Download PDF; the PDF downloads like any other file and appears in Files (iPhone) or Downloads (Android)."
+      guide: [
+        ['一份好简历的要点', { list: ['工作经验不足 10 年尽量控制在一页，最多两页。', '每条描述以动词开头并量化成果，例如“将上线耗时缩短 30%”。', '最相关的经历放前面，过于久远或不相关的经历可以删减。', '把招聘启事里的关键词写进技能与经历，筛选系统会按关键词匹配。'] }],
+        ['PDF 导出的原理', '“PDF（可选中文字）”调用浏览器的打印功能，页面已按预览预先分好页，所以文件里是真实文字，分页位置与预览完全一致。“图片”类导出把每页渲染成图片，在任何设备上看起来都一样，但无法搜索和复制文字。'],
+        ['如何选择模板', { table: [['模板', '适合'], ['经典、国际版', '企业岗位与在线投递系统'], ['侧栏、雅致', '需要照片和技能栏的岗位'], ['创意色块、醒目、时间轴', '设计、运营、产品等偏创意岗位'], ['紧凑一页、极简', '想在一页里放更多内容'], ['表格式', '国内正式场合、需要照片栏'], ['技术极客、学术', '技术岗位与科研简历']] }],
       ],
-      [
-        "Can I make a resume in Chinese?",
-        "Yes. Switch the site to 中文 for Chinese section titles and write in any language."
-      ]
-    ],
-    "ui": {
-      "personal": "Personal details",
-      "name": "Full name",
-      "headline": "Job title / headline",
-      "email": "Email",
-      "phone": "Phone",
-      "location": "City, country",
-      "website": "Website / LinkedIn",
-      "photo": "Photo (optional)",
-      "removePhoto": "Remove photo",
-      "summary": "Profile summary",
-      "summaryPh": "Two or three sentences about your experience and what you are looking for.",
-      "experience": "Work experience",
-      "company": "Company",
-      "role": "Position",
-      "start": "Start",
-      "end": "End",
-      "endPh": "Present",
-      "bullets": "Achievements (one per line)",
-      "addExp": "+ Add job",
-      "education": "Education",
-      "school": "School / university",
-      "degree": "Degree / major",
-      "addEdu": "+ Add education",
-      "projects": "Projects",
-      "project": "Project name",
-      "projectDesc": "Description (one point per line)",
-      "addProj": "+ Add project",
-      "skills": "Skills",
-      "skillsPh": "Comma separated, e.g. Excel, SQL, Project management",
-      "extra": "Languages, certificates, awards",
-      "extraPh": "One item per line",
-      "template": "Template",
-      "tClassic": "Classic",
-      "tModern": "Modern",
-      "tCompact": "Compact",
-      "accent": "Accent colour",
-      "download": "Download PDF",
-      "printHint": "In the print dialog choose \"Save as PDF\" as the printer.",
-      "example": "Load example",
-      "clearAll": "Clear all",
-      "confirmClear": "Delete everything in the form?",
-      "exportData": "Export data",
-      "importData": "Import data",
-      "remove": "Remove",
-      "up": "Up",
-      "hSummary": "Profile",
-      "hExperience": "Experience",
-      "hEducation": "Education",
-      "hProjects": "Projects",
-      "hSkills": "Skills",
-      "hExtra": "Additional",
-      "present": "Present",
-      "badImport": "This file is not a resume exported from this tool."
-    }
+      faq: [
+        ['这个简历制作工具真的免费吗？', '是的，不需要注册、不收费，导出的文件也没有水印。'],
+        ['我的个人信息保存在哪里？', '只保存在这台设备的浏览器本地存储里，不会上传到任何服务器。可以用“导出数据（.json）”备份，或迁移到另一台电脑。'],
+        ['招聘系统能读取我的 PDF 吗？', '“PDF（可选中文字）”导出的是真实文字，系统可以解析。建议使用经典、国际版等单栏模板，并使用常见的模块名称。'],
+        ['手机上怎么得到 PDF？', '点击“导出”再选 PDF，用手机的打印面板即可保存或分享为 PDF；“图片版 PDF”则会像普通文件一样直接下载。'],
+        ['可以做英文或中英双语简历吗？', '可以。内容可以用任意语言书写，所有模块标题都能改名；切换到英文站点即可使用英文默认标题。'],
+      ],
+      ui: {},
+    },
   },
-  "zh": {
-    "name": "简历制作",
-    "short": "在线写一份专业简历，实时预览，一键下载 PDF。",
-    "keywords": [
-      "简历模板",
-      "在线简历",
-      "免费简历",
-      "简历生成器",
-      "简历 pdf",
-      "个人简历"
-    ],
-    "title": "在线简历制作 — 免费简历模板，下载 PDF，免注册无水印",
-    "desc": "几分钟做出专业简历：填写表单，选择模板和主题色，实时预览 A4 效果，下载可被招聘系统（ATS）识别的 PDF。免费、免注册、无水印 —— 数据只存在你的浏览器里。",
-    "h1": "免费在线简历制作，一键导出 PDF",
-    "sub": "这是一个免费的在线简历制作工具：填写个人信息，选择模板和主题色，简历随输入实时更新 A4 预览。下载清晰的文字版 PDF，HR 和招聘系统（ATS）都能读取 —— 无需账号，没有水印。",
-    "features": [
-      [
-        "layout-template",
-        "三款简洁模板",
-        "「经典」适合网申和招聘系统，「现代」带彩色侧栏和照片，「紧凑」能在一页里放下更多内容。"
-      ],
-      [
-        "save",
-        "草稿自动保存",
-        "输入的内容会自动保存在当前浏览器中，关掉页面下次还能接着写；换设备时可以导出数据。"
-      ],
-      [
-        "file-check",
-        "招聘系统友好的 PDF",
-        "PDF 里是可以选中的真实文字而不是图片，HR 可以搜索，招聘系统也能正确解析。"
-      ]
-    ],
-    "steps": [
-      "填写表单，或点击「载入示例」从示例开始。",
-      "选择模板和颜色，预览会实时更新并显示分页位置。",
-      "点击「下载 PDF」，PDF 会像普通文件一样保存到下载文件夹。"
-    ],
-    "guide": [
-      [
-        "好简历的要点",
-        {
-          "list": [
-            "工作经验不到 10 年时尽量控制在一页，最多两页。",
-            "每条经历用动词开头并加上数字，例如「把新人上手时间缩短 30%」。",
-            "把最相关的经历放在前面，删掉很久以前或无关的工作。",
-            "在技能和经历中使用招聘要求里的关键词 —— 招聘系统会按关键词匹配。"
-          ]
-        }
-      ],
-      [
-        "模板怎么选？",
-        {
-          "table": [
-            [
-              "模板",
-              "适合"
-            ],
-            [
-              "经典",
-              "大公司岗位和网申系统（对招聘系统最友好）"
-            ],
-            [
-              "现代",
-              "设计、市场、产品类岗位；需要照片时"
-            ],
-            [
-              "紧凑",
-              "经历丰富、希望放在一页里"
-            ]
-          ]
-        }
-      ]
-    ],
-    "faq": [
-      [
-        "这个简历工具真的免费吗？",
-        "是的 —— 无需注册、不用付费，导出的 PDF 也没有水印。"
-      ],
-      [
-        "我的信息保存在哪里？",
-        "只保存在这台设备浏览器的本地存储中，不会发送到服务器。换电脑时可以用「导出数据」转移简历。"
-      ],
-      [
-        "招聘系统（ATS）能读取我的简历吗？",
-        "能。PDF 里是真实文字。想要效果最好，请使用「经典」模板和常规的栏目名称。"
-      ],
-      [
-        "手机上怎么得到 PDF？",
-        "点击「下载 PDF」，PDF 会保存到「文件」（iPhone）或下载文件夹（安卓）。"
-      ],
-      [
-        "可以做英文简历吗？",
-        "可以。把网站切换到 English，栏目标题就会变成英文，内容可以用任何语言填写。"
-      ]
-    ],
-    "ui": {
-      "personal": "个人信息",
-      "name": "姓名",
-      "headline": "求职意向 / 职位",
-      "email": "邮箱",
-      "phone": "电话",
-      "location": "所在城市",
-      "website": "个人网站 / 作品集",
-      "photo": "照片（可选）",
-      "removePhoto": "移除照片",
-      "summary": "个人简介",
-      "summaryPh": "用两三句话概括你的经验、优势和求职方向。",
-      "experience": "工作经历",
-      "company": "公司",
-      "role": "职位",
-      "start": "开始时间",
-      "end": "结束时间",
-      "endPh": "至今",
-      "bullets": "工作内容与成果（每行一条）",
-      "addExp": "+ 添加工作经历",
-      "education": "教育背景",
-      "school": "学校",
-      "degree": "学历 / 专业",
-      "addEdu": "+ 添加教育经历",
-      "projects": "项目经历",
-      "project": "项目名称",
-      "projectDesc": "项目描述（每行一条）",
-      "addProj": "+ 添加项目",
-      "skills": "专业技能",
-      "skillsPh": "用逗号分隔，例如：Excel, SQL, 项目管理",
-      "extra": "语言、证书、荣誉",
-      "extraPh": "每行一项",
-      "template": "模板",
-      "tClassic": "经典",
-      "tModern": "现代",
-      "tCompact": "紧凑",
-      "accent": "主题色",
-      "download": "下载 PDF",
-      "printHint": "在打印窗口中，把打印机选为「另存为 PDF」。",
-      "example": "载入示例",
-      "clearAll": "清空",
-      "confirmClear": "确定清空表单中的所有内容吗？",
-      "exportData": "导出数据",
-      "importData": "导入数据",
-      "remove": "删除",
-      "up": "上移",
-      "hSummary": "个人简介",
-      "hExperience": "工作经历",
-      "hEducation": "教育背景",
-      "hProjects": "项目经历",
-      "hSkills": "专业技能",
-      "hExtra": "其他",
-      "present": "至今",
-      "badImport": "这个文件不是从本工具导出的简历数据。"
-    }
-  }
-},
-  ui: (s) => html`
-<div class="resume-app">
-  <form class="resume-form" id="rb-form" autocomplete="on" onsubmit="return false">
-    <div class="actions" style="margin:0 0 14px">
-      <label class="field" style="flex:1"><span>${s.template}</span><select name="template"><option value="classic">${s.tClassic}</option><option value="modern">${s.tModern}</option><option value="compact">${s.tCompact}</option></select></label>
-      <label class="field"><span>${s.accent}</span><input type="color" name="accent" value="#0f766e"></label>
-    </div>
-    <fieldset><legend>${s.personal}</legend>
-      <div class="grid2">
-        <label class="field"><span>${s.name}</span><input type="text" name="name" autocomplete="name"></label>
-        <label class="field"><span>${s.headline}</span><input type="text" name="headline" autocomplete="organization-title"></label>
-        <label class="field"><span>${s.email}</span><input type="email" name="email" autocomplete="email"></label>
-        <label class="field"><span>${s.phone}</span><input type="tel" name="phone" autocomplete="tel"></label>
-        <label class="field"><span>${s.location}</span><input type="text" name="location"></label>
-        <label class="field"><span>${s.website}</span><input type="text" name="website" autocomplete="url"></label>
-      </div>
-      <div class="actions" style="margin-top:10px"><label class="btn ghost sm" for="rb-photo">${s.photo}</label><input type="file" id="rb-photo" accept="image/*" hidden><button type="button" class="btn danger sm" id="rb-photo-rm" hidden>${s.removePhoto}</button></div>
-    </fieldset>
-    <fieldset><legend>${s.summary}</legend><textarea name="summary" rows="3" placeholder="${s.summaryPh}"></textarea></fieldset>
-    <fieldset><legend>${s.experience}</legend><div id="rb-exp"></div><button type="button" class="btn ghost sm" id="rb-add-exp" style="margin-top:10px">${s.addExp}</button></fieldset>
-    <fieldset><legend>${s.education}</legend><div id="rb-edu"></div><button type="button" class="btn ghost sm" id="rb-add-edu" style="margin-top:10px">${s.addEdu}</button></fieldset>
-    <fieldset><legend>${s.projects}</legend><div id="rb-proj"></div><button type="button" class="btn ghost sm" id="rb-add-proj" style="margin-top:10px">${s.addProj}</button></fieldset>
-    <fieldset><legend>${s.skills}</legend><textarea name="skills" rows="2" placeholder="${s.skillsPh}"></textarea>
-      <label class="field" style="margin-top:10px"><span>${s.extra}</span><textarea name="extra" rows="3" placeholder="${s.extraPh}"></textarea></label></fieldset>
-    <div class="actions"><button type="button" class="btn soft" id="rb-example">${s.example}</button><button type="button" class="btn ghost sm" id="rb-export">${s.exportData}</button><label class="btn ghost sm" for="rb-import">${s.importData}</label><input type="file" id="rb-import" accept="application/json,.json" hidden><button type="button" class="btn danger sm" id="rb-clear">${s.clearAll}</button></div>
-  </form>
-  <div class="resume-side">
-    <div class="actions"><button class="btn lg" id="rb-print">${s.download}</button><span class="note">${s.printHint}</span></div>
-    <div id="rb-status"></div>
-    <div class="resume-scale" id="rb-scale"><div id="rb-paper"></div></div>
-  </div>
-</div>`,
+  ui: () => html`
+<div id="rv-root"><p class="hint">Loading the editor… This tool needs JavaScript.</p></div>`,
 };
