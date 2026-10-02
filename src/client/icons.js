@@ -34,7 +34,11 @@ import repeat from 'lucide-static/icons/repeat.svg';
 import eye from 'lucide-static/icons/eye.svg';
 import zap from 'lucide-static/icons/zap.svg';
 
-const ICONS = { upload, download, fileVideo, fileAudio, fileText, image, images, circleCheck, circleAlert, x, rotateCw, rotateCcw, trash, grip, play, pause, scissors, refresh, plus, copy, arrowUp, arrowDown, arrowLeft, arrowRight, merge, split, camera, crop, sparkles, fileImage, music, repeat, eye, zap };
+import undo from 'lucide-static/icons/undo-2.svg';
+import filePlus from 'lucide-static/icons/file-plus.svg';
+import squareDashed from 'lucide-static/icons/square-dashed.svg';
+
+const ICONS = { undo, filePlus, squareDashed, upload, download, fileVideo, fileAudio, fileText, image, images, circleCheck, circleAlert, x, rotateCw, rotateCcw, trash, grip, play, pause, scissors, refresh, plus, copy, arrowUp, arrowDown, arrowLeft, arrowRight, merge, split, camera, crop, sparkles, fileImage, music, repeat, eye, zap };
 
 /** Returns a decorative <svg> element. */
 export function icon(name, cls = 'ic') {
