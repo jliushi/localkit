@@ -5,7 +5,7 @@ import { ri } from './resume-icons.js';
 import { T } from './resume-i18n.js';
 
 const isRich = (e) => e && e.closest?.('[data-rich]');
-const fieldOf = (t) => (t instanceof Element ? t.closest('[data-ref][contenteditable]') : null);
+const fieldOf = (t) => (t instanceof Element ? (t.closest('[data-ref][contenteditable]') || (t.matches('input[data-ref]') ? t : null)) : null);
 
 export function initEditing({ onField, onEnter, onFocus }) {
   try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch { /* ignore */ }

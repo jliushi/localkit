@@ -1,0 +1,18 @@
+import puppeteer from 'puppeteer';
+const b = await puppeteer.launch(); const p = await b.newPage();
+await p.setViewport({ width: 1280, height: 900 });
+p.on('pageerror', e => console.log('PAGEERR', e.message));
+p.on('console', m => { console.log('CONSOLE', m.text()); });
+await p.goto('http://localhost:8092/localkit/en/resume-builder/', { waitUntil: 'networkidle0' });
+await p.waitForSelector('#rv-starter[open]'); await p.click('[data-start=se]');
+await p.waitForSelector('.rv-host .rv-sheet .rv-name');
+const order = () => p.evaluate(()=>window.__rv.doc().modules.map(m=>m.type).join());
+console.log(await order());
+const g = await p.$$('.rp-mod .rp-grip:not(.off)');
+const a = await g[1].boundingBox(), c = await g[3].boundingBox();
+console.log(a, c);
+await p.mouse.move(a.x + 5, a.y + 5); await p.mouse.down(); await p.mouse.move(a.x + 5, c.y + 60, { steps: 8 });
+console.log(await p.evaluate(()=>document.querySelector('.rv-dropline')?.style.top));
+await p.mouse.up(); await new Promise(r=>setTimeout(r,300));
+console.log(await order());
+await b.close();

@@ -29,8 +29,13 @@ export async function printPdf(doc, fit, title) {
 async function pageToCanvas(page, scale) {
   const w = A4.w, h = A4.h;
   const xml = new XMLSerializer().serializeToString(page);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * scale}" height="${h * scale}" viewBox="0 0 ${w} ${h}"><foreignObject x="0" y="0" width="${w}" height="${h}"><div xmlns="http://www.w3.org/1999/xhtml" style="width:${w}px;height:${h}px"><style>${RV_CSS.replace(/]]>/g, '')}</style>${xml}</div></foreignObject></svg>`;
-  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * scale}" height="${h * scale}" viewBox="0 0 ${w} ${h}"><foreignObject x="0" y="0" width="${w}" height="${h}"><div xmlns="http://www.w3.org/1999/xhtml" style="width:${w}px;height:${h}px"><style>${RV_CSS.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</style>${xml}</div></foreignObject></svg>`;
+  const bad = new DOMParser().parseFromString(svg, 'image/svg+xml').querySelector('parsererror');
+  if (bad) {
+    const m = /line (\d+) at column (\d+)/.exec(bad.textContent) || [];
+    throw new Error(`render failed near: ${(svg.split('\n')[m[1] - 1] || '').slice(Math.max(0, m[2] - 80), +m[2] + 20)}`);
+  }
+  const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   try {
     const img = new Image();
     img.decoding = 'sync';
@@ -41,7 +46,7 @@ async function pageToCanvas(page, scale) {
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     return canvas;
-  } finally { URL.revokeObjectURL(url); }
+  } finally { /* data URL: nothing to revoke */ }
 }
 const toBlob = (canvas, type, q) => new Promise((res) => canvas.toBlob(res, type, q));
 

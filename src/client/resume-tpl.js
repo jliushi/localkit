@@ -20,7 +20,7 @@ export const FONTS = {
     ['en-serif', 'Latin Serif', 'Georgia, "Times New Roman", "Songti SC", SimSun, serif'],
   ],
 };
-const fontStack = (id) => (FONTS.zh.concat(FONTS.en).find((f) => f[0] === id) || FONTS[lang][0])[2];
+const fontStack = (id) => (FONTS.zh.concat(FONTS.en).find((f) => f[0] === id) || FONTS[lang][0])[2].replace(/"/g, "'");
 
 export const PALETTE = ['#1e4e8c', '#0f766e', '#2563eb', '#4f46e5', '#7c3aed', '#be185d', '#dc2626', '#d97706', '#15803d', '#0e7490', '#44403c', '#111827'];
 

@@ -10,9 +10,8 @@ export const RV_CSS = `
 .rv-sheet .f{display:inline}
 .rv-sheet .rv-desc,.rv-sheet .rv-desc.f{display:block}
 .rv-brk{display:block;height:0;pointer-events:none}
-.rv-sheet svg.ic,.rv-sheet svg.rv-ci,.rv-sheet svg.rv-mi{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}
-.rv-sheet .rv-mi{display:none}
-.rv-sheet .rv-ci{display:none}
+.rv-sheet svg.ic,.rv-sheet svg.rv-ci,.rv-sheet svg.rv-mi{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.rv-sheet :where(svg.rv-mi,svg.rv-ci){display:none}
 /* modules & entries */
 .rv-mod{margin-top:var(--gap);position:relative}
 .rv-flow>.rv-mod:first-child,.rv-mainc>.rv-mod:first-of-type{margin-top:0}
@@ -44,7 +43,7 @@ export const RV_CSS = `
 .rv-rd{margin-left:auto;color:var(--mute);font-size:.94em;white-space:nowrap}
 .rv-photo{width:var(--pw);height:calc(var(--pw)*var(--pr));flex:none;overflow:hidden;background:#e6e9ed;border-radius:6px}
 .rv-photo img{display:block;width:100%;height:100%;object-fit:cover}
-.rv-photo.shape-portrait{--pr:1.4;border-radius:4px}
+.rv-photo.shape-portrait{--pr:1.5;border-radius:4px}
 .rv-photo.shape-circle{border-radius:50%}
 .rv-photo.empty{background:none;color:var(--mute);display:flex;align-items:center;justify-content:center;font-size:.9em;border:1px dashed var(--line)}
 .rv-head{margin-bottom:var(--gap)}
@@ -165,14 +164,14 @@ export const RV_CSS = `
 .t-table .rv-ttl{text-align:center;font-size:1.9em;font-weight:800;letter-spacing:.2em;padding:0 0 .55em}
 .t-table .rv-tgrid{display:grid;grid-template-columns:minmax(0,1fr);border:1px solid var(--line);border-bottom:0}
 .t-table .rv-tgrid.with-photo{grid-template-columns:minmax(0,1fr) 124px}
-.t-table .rv-tcells{display:grid;grid-template-columns:5.4em minmax(0,1fr) 5.4em minmax(0,1fr)}
+.t-table .rv-tcells{display:grid;grid-template-columns:6.6em minmax(0,1fr) 5.4em minmax(0,1fr)}
 .t-table .rv-tl,.t-table .rv-tv{padding:.38em .6em;border-bottom:1px solid var(--line);border-right:1px solid var(--line);min-height:2.25em}
 .t-table .rv-tl{background:var(--tint);font-weight:600;text-align:center}
 .t-table .rv-tcells>:nth-child(4n){border-right:0}
 .t-table .with-photo .rv-tcells>:nth-child(4n){border-right:1px solid var(--line)}
 .t-table .rv-tph{border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;padding:8px}
-.t-table .rv-photo{--pw:100px;--pr:1.4}
-.t-table .rv-photo.shape-circle,.t-table .rv-photo.shape-square{--pr:1.4}
+.t-table .rv-photo{--pw:100px;--pr:1.5}
+.t-table .rv-photo.shape-circle,.t-table .rv-photo.shape-square{--pr:1.5}
 .t-table .rv-photo.empty{width:100px;height:140px}
 .t-table .rv-photo.shape-circle{border-radius:4px}
 .t-table .rv-mod{margin-top:0;border:1px solid var(--line);border-top:0}

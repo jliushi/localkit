@@ -79,6 +79,7 @@ const cache = {};
 export function ri(name, cls = "ic") {
   const key = name + cls;
   if (cache[key]) return cache[key];
-  const raw = (RAW[name] || RAW.info).replace(/<!--.*?-->/s, "").trim().replace(/\s(?:width|height)="[^"]*"/g, "").replace(/class="[^"]*"/, `class="${cls}" aria-hidden="true"`);
+  const src = (RAW[name] || RAW.info).replace(/<!--.*?-->/s, "").trim();
+  const raw = src.replace(/^<svg[^>]*>/, (tag) => tag.replace(/\s(?:width|height)="[^"]*"/g, "").replace(/class="[^"]*"/, `class="${cls}" aria-hidden="true"`));
   return (cache[key] = raw);
 }
