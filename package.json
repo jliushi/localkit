@@ -26,6 +26,7 @@
     "@tesseract.js-data/eng": "^1.0.0",
     "@tesseract.js-data/fra": "^1.0.0",
     "@tesseract.js-data/spa": "^1.0.0",
+    "@shiguredo/rnnoise-wasm": "2025.1.5",
     "diff": "^9.0.0",
     "gifenc": "^1.0.3",
     "heic2any": "^0.0.4",
