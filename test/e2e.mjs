@@ -260,12 +260,12 @@ await test('ai-subtitle-generator:en+burn', async () => {
   await page.waitForSelector('#as-editor:not([hidden])', { timeout: 600000 });
   const all = await page.$$eval('.sub-row textarea', (t) => t.map((x) => x.value).join(' '));
   assert(/welcome/i.test(all) && /browser/i.test(all), `transcript: ${all}`);
-  await page.click('#as-srt');
+  await clickSettled(page, '#as-srt');
   const srt = fs.readFileSync(outFile(await waitDownload(page, 1)), 'utf8');
   assert(/^1\n00:00:\d\d,\d{3} --> 00:00:\d\d,\d{3}\n/.test(srt), 'srt format');
-  await page.click('#as-burn');
+  await clickSettled(page, '#as-burn');
   await page.waitForSelector('#as-burned .result', { timeout: 300000 });
-  await page.click('#as-burned .btn.lg');
+  await clickSettled(page, '#as-burned .btn.lg');
   const vid = await waitDownload(page, 2);
   assert(probe(vid).streams.some((s) => s.codec_type === 'audio'), 'audio kept');
   return page;
@@ -314,7 +314,7 @@ if (!only || only.has('merge-pdf')) {
 let pdfjsNode;
 async function pageTexts(file) {
   pdfjsNode ||= await import('pdfjs-dist/legacy/build/pdf.mjs');
-  const doc = await pdfjsNode.getDocument({ data: new Uint8Array(fs.readFileSync(outFile(file))), isEvalSupported: false }).promise;
+  const doc = await pdfjsNode.getDocument({ data: new Uint8Array(fs.readFileSync(outFile(file))), isEvalSupported: false, standardFontDataUrl: path.join(ROOT, 'node_modules', 'pdfjs-dist', 'standard_fonts') + path.sep }).promise;
   const out = [];
   for (let i = 1; i <= doc.numPages; i++) out.push((await (await doc.getPage(i)).getTextContent()).items.map((x) => x.str).join(' ').trim());
   return out;
