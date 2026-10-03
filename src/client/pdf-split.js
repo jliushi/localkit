@@ -1,4 +1,4 @@
-import { $, t, el, dropzone, download, downloadZip, baseName, status } from './lib.js';
+import { $, t, el, dropzone, download, downloadZip, baseName, status, beginTask } from './lib.js';
 import { openForRender, openForEdit, renderPage, readBytes, pdfBlob, pdflib, parseRanges, PdfError , closeDoc } from './pdf-common.js';
 
 const st = status($('#ps-status'));
@@ -7,7 +7,11 @@ const selected = new Set();
 
 function updateCount() {
   $('#ps-count').textContent = t('selectedN', selected.size, count);
-  for (const th of document.querySelectorAll('#ps-thumbs .thumb')) th.classList.toggle('selected', selected.has(Number(th.dataset.n)));
+  for (const th of document.querySelectorAll('#ps-thumbs .thumb')) {
+    const checked = selected.has(Number(th.dataset.n));
+    th.classList.toggle('selected', checked);
+    th.setAttribute('aria-checked', String(checked));
+  }
 }
 
 $('#ps-mode').addEventListener('change', () => { $('#ps-ranges-wrap').hidden = $('#ps-mode').value !== 'ranges'; });
@@ -18,12 +22,15 @@ dropzone($('#ps-drop'), {
   accept: '.pdf,application/pdf',
   onFiles: async ([file]) => {
     st.clear();
+    bytes = null; count = 0;
+    $('#ps-work').hidden = true;
+    let doc;
     selected.clear();
     $('#ps-thumbs').replaceChildren();
     try {
       bytes = await readBytes(file);
       name = baseName(file.name);
-      const doc = await openForRender(bytes);
+      doc = await openForRender(bytes);
       count = doc.numPages;
       $('#ps-work').hidden = false;
       updateCount();
@@ -35,15 +42,18 @@ dropzone($('#ps-drop'), {
         $('#ps-thumbs').append(th);
       }
       for (let n = 1; n <= count; n++) $(`#ps-thumbs .thumb[data-n="${n}"]`).prepend(await renderPage(doc, n, 120));
+      updateCount();
       st.clear();
-      closeDoc(doc);
     } catch (e) {
+      bytes = null; count = 0;
+      $('#ps-work').hidden = true;
       st.error(e);
-    }
+    } finally { closeDoc(doc); }
   },
 });
 
 $('#ps-go').addEventListener('click', async () => {
+  if (!bytes || !count) return;
   const mode = $('#ps-mode').value;
   let groups;
   try {
@@ -60,6 +70,7 @@ $('#ps-go').addEventListener('click', async () => {
     return;
   }
   st.busy(t('working'));
+  const task = beginTask();
   try {
     const { PDFDocument } = await pdflib();
     const src = await openForEdit(bytes);
@@ -75,5 +86,5 @@ $('#ps-go').addEventListener('click', async () => {
     st.ok(t('done', outs.length));
   } catch (e) {
     st.error(e);
-  }
+  } finally { task.finish(); }
 });

@@ -1,4 +1,4 @@
-import { $, t, el, dropzone, download, baseName, status } from './lib.js';
+import { $, t, el, dropzone, download, baseName, status, beginTask } from './lib.js';
 import { openForRender, openForEdit, renderPage, readBytes, pdfBlob, pdflib, sortable, move, PdfError , closeDoc } from './pdf-common.js';
 
 const st = status($('#po-status'));
@@ -45,18 +45,21 @@ dropzone($('#po-drop'), {
       }
       st.clear();
     } catch (e) {
+      $('#po-work').hidden = true;
+      $('#po-drop').hidden = false;
       st.error(e);
-    }
+    } finally { closeDoc(doc); doc = null; }
   },
 });
 
 $('#po-rotall').addEventListener('click', () => { for (const p of pages) p.rot = (p.rot + 90) % 360; render(); });
-$('#po-reset').addEventListener('click', () => { pages = []; grid.replaceChildren(); $('#po-work').hidden = true; $('#po-drop').hidden = false; st.clear(); });
+$('#po-reset').addEventListener('click', () => { pages = []; bytes = null; grid.replaceChildren(); $('#po-work').hidden = true; $('#po-drop').hidden = false; st.clear(); });
 
 $('#po-save').addEventListener('click', async () => {
   const keep = pages.filter((p) => !p.deleted);
   if (!keep.length) { st.error(new PdfError(t('allDeleted'))); return; }
   st.busy(t('saving'));
+  const task = beginTask();
   try {
     const { PDFDocument, degrees } = await pdflib();
     const src = await openForEdit(bytes);
@@ -71,5 +74,5 @@ $('#po-save').addEventListener('click', async () => {
     st.ok(t('done', keep.length));
   } catch (e) {
     st.error(e);
-  }
+  } finally { task.finish(); }
 });

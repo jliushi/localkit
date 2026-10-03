@@ -57,7 +57,7 @@ export default {
       },
     },
   },
-  ui: (s) => html`
+  ui: (s, c, lang) => html`
 <div class="dropzone" id="pe-drop"><strong>${s.drop}</strong></div>
 <div id="pe-work" hidden>
   <div class="sticky-bar">
@@ -72,12 +72,13 @@ export default {
       <label class="check">${s.size} <input type="number" id="pe-size" min="6" max="96" value="14" style="width:5em"></label>
       <label class="check">${s.color} <input type="color" id="pe-color" value="#000000"></label>
       <button class="btn" id="pe-save">${s.save}</button>
+      <button class="btn ghost" id="pe-reset">${lang === 'zh' ? '选择其他 PDF' : 'Open another PDF'}</button>
     </div>
     <div class="muted small" id="pe-hint"></div>
   </div>
-  <div class="status" id="pe-status" hidden></div>
   <div class="editor-pages" id="pe-pages"></div>
 </div>
+<div class="status" id="pe-status" hidden></div>
 <input type="file" id="pe-imgfile" accept="image/png,image/jpeg,image/webp" hidden>
 <dialog id="pe-sig">
   <h3 style="margin-top:0">${s.sigTitle}</h3>

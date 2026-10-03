@@ -69,9 +69,15 @@ export function dropzone(zone, { accept = '', multiple = false, onFiles }) {
   zone.append(input);
   zone.tabIndex = 0;
   zone.setAttribute('role', 'button');
-  const take = (list) => {
+  const take = async (list) => {
+    if (zone.closest('[aria-busy="true"]') || zone.closest('[hidden]')) return;
     const files = [...list].filter((f) => matches(f, accept));
-    if (files.length) onFiles(multiple ? files : files.slice(0, 1));
+    const node = document.querySelector('#tool .status');
+    if (!files.length) { if (node) status(node).error(new Error(c('wrongFile'))); return; }
+    const task = beginTask();
+    try { await onFiles(multiple ? files : files.slice(0, 1)); }
+    catch (err) { if (node) status(node).error(err); }
+    finally { task.finish(); }
   };
   zone.addEventListener('click', (e) => { if (e.target === input) return; input.click(); });
   zone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
@@ -92,11 +98,13 @@ function matches(file, accept) {
 
 /** Status line helper: status(el).busy('…') / .ok('…') / .error(err) / .clear() */
 export function status(node) {
+  node.setAttribute('role', 'status');
+  node.setAttribute('aria-live', 'polite');
   const set = (cls, ...content) => { node.className = `status ${cls}`; node.replaceChildren(...content); node.hidden = false; };
   return {
     busy: (msg, pct) => set('busy', el('span', { class: 'spinner' }), msg, pct != null ? el('span', { class: 'pct', text: ` ${Math.round(pct)}%` }) : ''),
     ok: (...content) => set('ok', ...content),
-    error: (err) => { console.warn(err); set('error', c('error', err?.message || String(err))); },
+    error: (err) => { if (err?.name === 'AbortError') set('', c('cancelled')); else { console.warn(err); set('error', c('error', err?.message || String(err))); } },
     clear: () => { node.hidden = true; node.replaceChildren(); },
   };
 }
@@ -119,3 +127,46 @@ export async function copyText(text, button) {
 }
 
 export const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
+
+/** Keep a job's input and settings stable, including drag/drop and clipboard input. */
+export function beginTask({ cancellable = false } = {}) {
+  const root = $('#tool');
+  const controller = new AbortController();
+  const children = [...root.children].filter(node => !node.matches('.status, .progress, [role="status"]')).map((node) => [node, node.inert]);
+  const focused = document.activeElement;
+  root.setAttribute('aria-busy', 'true');
+  for (const [node] of children) node.inert = true;
+  const cancel = cancellable ? el('button', {
+    type: 'button', class: 'btn secondary task-cancel', text: c('cancel'),
+    onclick: () => { controller.abort(); cancel.disabled = true; },
+  }) : null;
+  if (cancel) root.append(cancel);
+  let finished = false;
+  return {
+    signal: controller.signal,
+    finish() {
+      if (finished) return;
+      finished = true;
+      for (const [node, inert] of children) node.inert = inert;
+      root.removeAttribute('aria-busy');
+      cancel?.remove();
+      if (focused?.isConnected && focused !== document.body) focused.focus({ preventScroll: true });
+    },
+  };
+}
+
+/** Stop waiting immediately when cancelled; late work cannot update the UI. */
+export function abortable(promise, signal) {
+  signal.throwIfAborted();
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(signal.reason);
+    signal.addEventListener('abort', abort, { once: true });
+    Promise.resolve(promise).then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+  });
+}
+
+export function releaseUrls(root) {
+  for (const node of root.querySelectorAll('[src]')) {
+    if (node.src?.startsWith('blob:')) URL.revokeObjectURL(node.src);
+  }
+}

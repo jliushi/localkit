@@ -1,4 +1,4 @@
-import { $, t, c, el, dropzone, download, fmtBytes, baseName, extOf, status } from './lib.js';
+import { $, t, c, el, dropzone, download, fmtBytes, baseName, extOf, status, beginTask, releaseUrls } from './lib.js';
 import { getFFmpeg, run, fmtTime, parseTime } from './ffmpeg-common.js';
 
 const st = status($('#vt-status'));
@@ -23,7 +23,11 @@ dropzone($('#vt-drop'), {
   onFiles: ([f]) => {
     file = f;
     st.clear();
+    releaseUrls($('#vt-result'));
     $('#vt-result').replaceChildren();
+    if (video.src.startsWith('blob:')) URL.revokeObjectURL(video.src);
+    $('#vt-start').value = '';
+    $('#vt-end').value = '';
     video.src = URL.createObjectURL(f);
     $('#vt-work').hidden = false;
     getFFmpeg().catch(() => {});
@@ -52,8 +56,10 @@ $('#vt-preview').addEventListener('click', () => {
 });
 
 $('#vt-go').addEventListener('click', async () => {
+  if (!file) return;
   const [a, b] = times();
-  if (a == null || b == null || b <= a) { st.error(new Error(t('badTimes'))); return; }
+  if (a == null || b == null || b <= a || (Number.isFinite(video.duration) && b > video.duration + 0.05)) { st.error(new Error(t('badTimes'))); return; }
+  const task = beginTask({ cancellable: true });
   const precise = $('#vt-mode').value === 'precise';
   const ext = precise ? 'mp4' : (extOf(file.name) || 'mp4');
   const outName = `${baseName(file.name)}_clip.${ext}`;
@@ -65,12 +71,13 @@ $('#vt-go').addEventListener('click', async () => {
   bar.hidden = false;
   try {
     st.busy(t('loading'));
-    await getFFmpeg();
     st.busy(t('working', ''));
-    const blob = await run(file, args, `out.${ext}`, file.type || 'video/mp4', {
+    const blob = await run(file, args, `out.${ext}`, precise ? 'video/mp4' : file.type || 'video/mp4', {
+      signal: task.signal,
       duration: b - a,
       onProgress: (p) => { bar.firstElementChild.style.width = `${(p * 100).toFixed(1)}%`; st.busy(t('working', `${Math.round(p * 100)}%`)); },
     });
+    releaseUrls($('#vt-result'));
     $('#vt-result').replaceChildren(
       el('video', { src: URL.createObjectURL(blob), controls: true, playsinline: true }),
       el('div', { class: 'row' }, el('button', { class: 'btn', text: `⬇ ${c('download')} ${outName}`, onclick: () => download(blob, outName) })));
@@ -80,5 +87,6 @@ $('#vt-go').addEventListener('click', async () => {
   } finally {
     $('#vt-go').disabled = false;
     bar.hidden = true;
+    task.finish();
   }
 });

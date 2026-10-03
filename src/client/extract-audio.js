@@ -1,4 +1,4 @@
-import { $, t, c, el, dropzone, download, fmtBytes, baseName, status } from './lib.js';
+import { $, t, c, el, dropzone, download, fmtBytes, baseName, status, beginTask, releaseUrls } from './lib.js';
 import { getFFmpeg, run, mediaDuration } from './ffmpeg-common.js';
 
 const st = status($('#ea-status'));
@@ -13,6 +13,7 @@ dropzone($('#ea-drop'), {
   onFiles: async ([f]) => {
     file = f;
     st.clear();
+    releaseUrls($('#ea-result'));
     $('#ea-result').replaceChildren();
     duration = await mediaDuration(f);
     $('#ea-info').textContent = t('info', f.name, fmtBytes(f.size));
@@ -22,9 +23,12 @@ dropzone($('#ea-drop'), {
 });
 
 $('#ea-go').addEventListener('click', async () => {
+  if (!file) return;
+  const task = beginTask({ cancellable: true });
   const fmt = $('#ea-fmt').value;
   const outName = `${baseName(file.name)}.${fmt}`;
   const opts = {
+    signal: task.signal,
     duration,
     onProgress: (p) => { bar.firstElementChild.style.width = `${(p * 100).toFixed(1)}%`; st.busy(t('working', `${Math.round(p * 100)}%`)); },
   };
@@ -32,7 +36,6 @@ $('#ea-go').addEventListener('click', async () => {
   bar.hidden = false;
   try {
     st.busy(t('loading'));
-    await getFFmpeg();
     st.busy(t('working', ''));
     let blob;
     if (fmt === 'mp3') blob = await run(file, ['-i', '{in}', '-vn', '-map', '0:a:0', '-c:a', 'libmp3lame', '-q:a', $('#ea-q').value], 'out.mp3', MIME.mp3, opts);
@@ -42,9 +45,11 @@ $('#ea-go').addEventListener('click', async () => {
         // Copy the original AAC track when there is one: lossless and instant.
         blob = await run(file, ['-i', '{in}', '-vn', '-map', '0:a:0', '-c:a', 'copy'], 'out.m4a', MIME.m4a, opts);
       } catch {
+        task.signal.throwIfAborted();
         blob = await run(file, ['-i', '{in}', '-vn', '-map', '0:a:0', '-c:a', 'aac', '-b:a', '192k'], 'out.m4a', MIME.m4a, opts);
       }
     }
+    releaseUrls($('#ea-result'));
     $('#ea-result').replaceChildren(
       el('audio', { src: URL.createObjectURL(blob), controls: true }),
       el('div', { class: 'row' }, el('button', { class: 'btn', text: `⬇ ${c('download')} ${outName}`, onclick: () => download(blob, outName) })));
@@ -54,5 +59,6 @@ $('#ea-go').addEventListener('click', async () => {
   } finally {
     $('#ea-go').disabled = false;
     bar.hidden = true;
+    task.finish();
   }
 });

@@ -1,4 +1,4 @@
-import { $, t, c, el, dropzone, download, fmtBytes, extOf, status } from './lib.js';
+import { $, t, c, el, dropzone, download, fmtBytes, extOf, status, beginTask } from './lib.js';
 import { pdflib, pdfBlob, sortable, move } from './pdf-common.js';
 
 const st = status($('#sp-status'));
@@ -107,7 +107,7 @@ function render() {
       el('button', { title: t('left'), text: '←', disabled: i === 0, onclick: () => { move(items, i, i - 1); render(); } }),
       el('button', { title: t('rotL'), text: '⟲', onclick: async () => { it.rot = (it.rot + 270) % 360; await preview(it); render(); } }),
       el('button', { title: t('rotR'), text: '⟳', onclick: async () => { it.rot = (it.rot + 90) % 360; await preview(it); render(); } }),
-      el('button', { title: c('remove'), text: '×', onclick: () => { items.splice(i, 1); render(); } }),
+      el('button', { title: c('remove'), text: '×', onclick: () => { it.bitmap.close(); items.splice(i, 1); render(); } }),
       el('button', { title: t('right'), text: '→', disabled: i === items.length - 1, onclick: () => { move(items, i, i + 1); render(); } })))));
   $('#sp-go').disabled = !items.length;
 }
@@ -128,12 +128,17 @@ async function add(files) {
 
 sortable(grid, (from, to) => { move(items, from, to); render(); });
 dropzone($('#sp-drop'), { accept: 'image/*,.heic,.heif', multiple: true, onFiles: add });
-$('#sp-cam').addEventListener('change', (e) => { add([...e.target.files]); e.target.value = ''; });
+$('#sp-cam').addEventListener('change', async (e) => {
+  const task = beginTask();
+  try { await add([...e.target.files]); } finally { e.target.value = ''; task.finish(); }
+});
 $('#sp-filter').addEventListener('change', async () => { for (const it of items) await preview(it); render(); });
 
 const SIZES = { a4: [595.28, 841.89], letter: [612, 792] };
 
 $('#sp-go').addEventListener('click', async () => {
+  if (!items.length) return;
+  const task = beginTask();
   $('#sp-go').disabled = true;
   try {
     const { PDFDocument } = await pdflib();
@@ -162,5 +167,6 @@ $('#sp-go').addEventListener('click', async () => {
     st.error(e);
   } finally {
     $('#sp-go').disabled = false;
+    task.finish();
   }
 });

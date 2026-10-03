@@ -1,4 +1,4 @@
-import { $, t, c, el, dropzone, download, fmtBytes, baseName, status } from './lib.js';
+import { $, t, c, el, dropzone, download, fmtBytes, baseName, status, beginTask, releaseUrls } from './lib.js';
 import { getFFmpeg, run, mediaDuration, fmtTime } from './ffmpeg-common.js';
 
 const st = status($('#vc-status'));
@@ -22,9 +22,11 @@ dropzone($('#vc-drop'), {
   onFiles: async ([f]) => {
     file = f;
     st.clear();
+    releaseUrls($('#vc-result'));
     $('#vc-result').replaceChildren();
     duration = await mediaDuration(f);
     const v = $('#vc-video');
+    if (v.src.startsWith('blob:')) URL.revokeObjectURL(v.src);
     v.src = URL.createObjectURL(f);
     $('#vc-preview').hidden = false;
     $('#vc-info').textContent = t('info', f.name, fmtBytes(f.size), fmtTime(duration));
@@ -50,18 +52,20 @@ export function buildArgs(fmt, res, quality, fps, mute) {
 
 $('#vc-go').addEventListener('click', async () => {
   if (!file) return;
+  const task = beginTask({ cancellable: true });
   const fmt = $('#vc-fmt').value;
   $('#vc-go').disabled = true;
+  releaseUrls($('#vc-result'));
   $('#vc-result').replaceChildren();
   bar.hidden = false;
   bar.firstElementChild.style.width = '0';
   try {
     st.busy(t('loading'));
-    await getFFmpeg();
     st.busy(t('working', ''));
     const args = buildArgs(fmt, Number($('#vc-res').value), $('#vc-q').value, $('#vc-fps').value, $('#vc-mute').checked);
     const outName = `${baseName(file.name)}.${fmt}`;
     const blob = await run(file, args, `out.${fmt}`, MIME[fmt], {
+      signal: task.signal,
       duration,
       onProgress: (p) => { bar.firstElementChild.style.width = `${(p * 100).toFixed(1)}%`; st.busy(t('working', `${Math.round(p * 100)}%`)); },
     });
@@ -76,6 +80,7 @@ $('#vc-go').addEventListener('click', async () => {
   } finally {
     $('#vc-go').disabled = false;
     bar.hidden = true;
+    task.finish();
   }
 });
 refresh();

@@ -1,4 +1,4 @@
-import { $, t, c, el, dropzone, download, fmtBytes, status } from './lib.js';
+import { $, t, c, el, dropzone, download, fmtBytes, status, beginTask } from './lib.js';
 import { openForEdit, readBytes, pdfBlob, pdflib, sortable, move } from './pdf-common.js';
 
 const items = []; // { file, bytes, pages, error }
@@ -14,7 +14,7 @@ function render() {
     el('button', { class: 'btn danger', text: '↑', title: t('up'), disabled: i === 0, onclick: () => { move(items, i, i - 1); render(); } }),
     el('button', { class: 'btn danger', text: '↓', title: t('down'), disabled: i === items.length - 1, onclick: () => { move(items, i, i + 1); render(); } }),
     el('button', { class: 'btn danger', text: '×', title: c('remove'), onclick: () => { items.splice(i, 1); render(); } }))));
-  go.disabled = items.filter((x) => !x.error).length < 2;
+  go.disabled = items.some((x) => !x.error && !x.pages) || items.filter((x) => !x.error && x.pages).length < 2;
 }
 
 sortable(list, (from, to) => { move(items, from, to); render(); });
@@ -40,9 +40,10 @@ dropzone($('#pm-drop'), {
 });
 
 go.addEventListener('click', async () => {
-  const ok = items.filter((x) => !x.error);
+  const ok = items.filter((x) => !x.error && x.pages);
   if (ok.length < 2) { st.error(new Error(t('needTwo'))); return; }
   go.disabled = true;
+  const task = beginTask();
   st.busy(t('merging'));
   try {
     const { PDFDocument } = await pdflib();
@@ -58,6 +59,7 @@ go.addEventListener('click', async () => {
   } catch (e) {
     st.error(e);
   } finally {
-    go.disabled = false;
+    render();
+    task.finish();
   }
 });

@@ -1,4 +1,4 @@
-import { $, t, c, el, dropzone, download, downloadZip, fmtBytes, baseName, extOf, status } from './lib.js';
+import { $, t, c, el, dropzone, download, downloadZip, fmtBytes, baseName, extOf, status, beginTask, releaseUrls } from './lib.js';
 
 const files = [];
 const outputs = [];
@@ -47,8 +47,7 @@ async function decode(file) {
     // SVG and some formats only decode through <img>.
     const img = new Image();
     img.src = URL.createObjectURL(blob);
-    await img.decode();
-    URL.revokeObjectURL(img.src);
+    try { await img.decode(); } finally { URL.revokeObjectURL(img.src); }
     return img;
   }
 }
@@ -83,24 +82,33 @@ async function convertOne(file, type, quality, max, bg) {
   const encodeType = type === 'image/x-icon' ? 'image/png' : type;
   let blob = await new Promise((r) => cv.toBlob(r, encodeType, quality));
   if (!blob) throw new Error('encode failed');
+  if (blob.type !== encodeType) throw new Error(c('unsupported'));
   if (type === 'image/x-icon') blob = await pngToIco(blob, w, h);
   return { blob, w, h };
 }
 
 go.addEventListener('click', async () => {
+  if (!files.length) return;
+  if (!$('#ic-max').reportValidity()) return;
   const type = fmt.value;
   const quality = Number(q.value) / 100;
   const max = Number($('#ic-max').value) || 0;
   const bg = $('#ic-bg').value;
   outputs.length = 0;
+  releaseUrls($('#ic-results'));
   $('#ic-results').replaceChildren();
+  $('#ic-zip').hidden = true;
   go.disabled = true;
+  const task = beginTask({ cancellable: true });
+  try {
   let inTotal = 0, outTotal = 0;
   for (let i = 0; i < files.length; i++) {
+    task.signal.throwIfAborted();
     const f = files[i];
     st.busy(isHeic(f) ? `${t('converting', i + 1, files.length)} ${t('decodingHeic')}` : t('converting', i + 1, files.length), ((i) / files.length) * 100);
     try {
       const { blob, w, h } = await convertOne(f, type, quality, max, bg);
+      task.signal.throwIfAborted();
       const name = `${baseName(f.name)}.${EXT[type]}`;
       outputs.push({ name, blob });
       inTotal += f.size; outTotal += blob.size;
@@ -111,17 +119,23 @@ go.addEventListener('click', async () => {
         el('div', {}, `${w} × ${h} · ${fmtBytes(f.size)} → ${fmtBytes(blob.size)} `, el('span', { class: pct >= 0 ? 'saving' : 'growing', text: `${pct >= 0 ? '−' : '+'}${Math.abs(pct)}%` })),
         el('button', { class: 'btn ghost', text: `⬇ ${c('download')}`, onclick: () => download(blob, name) })));
     } catch (e) {
+      task.signal.throwIfAborted();
       $('#ic-results').append(el('div', { class: 'result' }, el('div', { class: 'name', text: f.name }), el('div', { class: 'growing', text: t('failed', f.name) })));
       console.warn(e);
     }
   }
-  st.ok(t('doneN', outputs.length, fmtBytes(inTotal), fmtBytes(outTotal)));
+  if (outputs.length === files.length) st.ok(t('doneN', outputs.length, fmtBytes(inTotal), fmtBytes(outTotal)));
+  else st.error(new Error(t('partial', outputs.length, files.length - outputs.length)));
+  } catch (err) { st.error(err); }
+  finally {
   $('#ic-zip').hidden = outputs.length < 2;
   go.disabled = false;
+  task.finish();
+  }
 });
 
 $('#ic-zip').addEventListener('click', () => downloadZip(outputs, 'images.zip'));
-$('#ic-clear').addEventListener('click', () => { files.length = 0; outputs.length = 0; $('#ic-results').replaceChildren(); st.clear(); $('#ic-zip').hidden = true; refresh(); });
+$('#ic-clear').addEventListener('click', () => { files.length = 0; outputs.length = 0; releaseUrls($('#ic-results')); $('#ic-results').replaceChildren(); st.clear(); $('#ic-zip').hidden = true; refresh(); });
 q.addEventListener('input', () => { $('#ic-q-val').textContent = q.value; });
 fmt.addEventListener('change', refresh);
 dropzone($('#ic-drop'), {

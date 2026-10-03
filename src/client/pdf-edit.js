@@ -1,5 +1,5 @@
-import { $, $$, t, el, dropzone, download, baseName, status } from './lib.js';
-import { openForRender, openForEdit, readBytes, pdfBlob, pdflib, PdfError } from './pdf-common.js';
+import { $, $$, t, el, dropzone, download, baseName, status, beginTask, LK } from './lib.js';
+import { openForRender, openForEdit, readBytes, pdfBlob, pdflib, PdfError, closeDoc } from './pdf-common.js';
 
 const st = status($('#pe-status'));
 const pagesBox = $('#pe-pages');
@@ -19,6 +19,8 @@ dropzone($('#pe-drop'), {
   accept: '.pdf,application/pdf',
   onFiles: async ([file]) => {
     st.clear();
+    pages = []; anns.length = 0; active = null; pending = null;
+    pagesBox.replaceChildren();
     try {
       bytes = await readBytes(file);
       name = baseName(file.name);
@@ -48,8 +50,10 @@ dropzone($('#pe-drop'), {
       st.clear();
       updateHint();
     } catch (e) {
+      $('#pe-drop').hidden = false;
+      $('#pe-work').hidden = true;
       st.error(e);
-    }
+    } finally { closeDoc(doc); doc = null; }
   },
 });
 
@@ -262,6 +266,7 @@ const dataUrlBytes = async (src) => new Uint8Array(await (await fetch(src)).arra
 $('#pe-save').addEventListener('click', async () => {
   if (!anns.length) { st.error(new PdfError(t('empty'))); return; }
   st.busy(t('saving'));
+  const task = beginTask();
   try {
     const { rgb, degrees } = await pdflib();
     const pdf = await openForEdit(bytes);
@@ -296,11 +301,23 @@ $('#pe-save').addEventListener('click', async () => {
     st.ok(t('done'));
   } catch (e) {
     st.error(e);
-  }
+  } finally { task.finish(); }
 });
 
 document.addEventListener('keydown', (e) => {
-  if ((e.key === 'Delete' || e.key === 'Backspace') && active && document.activeElement !== active.textEl) {
+  if ($('#tool').getAttribute('aria-busy') === 'true' || e.target.closest('input, textarea, [contenteditable]')) return;
+  if ((e.key === 'Delete' || e.key === 'Backspace') && active) {
+    e.preventDefault();
     active.el.querySelector('.x').click();
   }
+});
+
+$('#pe-reset').addEventListener('click', () => {
+  if (anns.length && !confirm(LK.lang === 'zh' ? '未保存的编辑将丢失，继续选择其他 PDF？' : 'Unsaved edits will be discarded. Open another PDF?')) return;
+  pages = []; anns.length = 0; active = null; pending = null; bytes = null;
+  pagesBox.replaceChildren();
+  $('#pe-work').hidden = true;
+  $('#pe-drop').hidden = false;
+  st.clear();
+  $('#pe-drop').focus();
 });

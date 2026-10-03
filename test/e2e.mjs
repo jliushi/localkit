@@ -2,11 +2,12 @@
 //   node build/serve.mjs 8090 &   then   node test/e2e.mjs [--only=base64,text-diff] [--shots]
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import os from 'node:os';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = path.join(ROOT, 'test', 'out');
+const OUT = process.env.TEST_OUT || fs.mkdtempSync(path.join(os.tmpdir(), 'localkit-e2e-'));
 const FIX = path.join(ROOT, 'test', 'fixtures');
 fs.mkdirSync(OUT, { recursive: true });
 const BASE = process.env.BASE_URL || 'http://localhost:8090/localkit';
@@ -49,9 +50,11 @@ async function test(name, fn) {
     page = await fn();
     if (page?.errors?.length) throw new Error(`console errors: ${page.errors.join(' | ')}`);
     results.push([name, 'PASS', Date.now() - started]);
+    console.log(`PASS ${name}`);
     if (args.shots && page) await page.screenshot({ path: path.join(OUT, `${name.replace(/[^a-z0-9]+/gi, '_')}.png`), fullPage: true });
   } catch (e) {
     results.push([name, `FAIL: ${e.message.split('\n')[0]}`, Date.now() - started]);
+    console.error(`FAIL ${name}: ${e.message.split('\n')[0]}`);
     page ||= lastPage;
     if (page) await page.screenshot({ path: path.join(OUT, `FAIL_${name.replace(/[^a-z0-9]+/gi, '_')}.png`), fullPage: true }).catch(() => {});
   } finally {
@@ -126,7 +129,7 @@ await test('text-diff:identical', async () => {
 
 // ---------------------------------------------------------------- extra tests are appended by later tools
 const extra = path.join(ROOT, 'test', 'e2e-tools.mjs');
-if (fs.existsSync(extra)) await (await import(`file://${extra}`)).default({ test, open, upload, waitText, assert, FIX, OUT, browser, args });
+if (fs.existsSync(extra)) await (await import(pathToFileURL(extra).href)).default({ test, open, upload, waitText, assert, FIX, OUT, browser, args });
 
 await browser.close();
 let failed = 0;

@@ -36,6 +36,7 @@ export default {
         exportData: 'Export data', importData: 'Import data', remove: 'Remove', up: 'Up',
         hSummary: 'Profile', hExperience: 'Experience', hEducation: 'Education', hProjects: 'Projects', hSkills: 'Skills', hExtra: 'Additional', present: 'Present',
         badImport: 'This file is not a resume exported from this tool.',
+        saveFailed: 'The browser could not save this draft. Export the data before leaving this page.',
       },
     },
     zh: {
@@ -68,6 +69,7 @@ export default {
         exportData: '导出数据', importData: '导入数据', remove: '删除', up: '上移',
         hSummary: '个人简介', hExperience: '工作经历', hEducation: '教育背景', hProjects: '项目经历', hSkills: '专业技能', hExtra: '其他', present: '至今',
         badImport: '这个文件不是从本工具导出的简历数据。',
+        saveFailed: '浏览器未能保存草稿，请在离开页面前导出数据备份。',
       },
     },
   },

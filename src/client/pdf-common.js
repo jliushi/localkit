@@ -15,8 +15,8 @@ export const pdflib = () => import('pdf-lib');
 /** Releases a pdf.js document (the API moved between versions). */
 export function closeDoc(doc) {
   if (!doc) return;
-  if (typeof doc.destroy === 'function') doc.destroy();
-  else doc.loadingTask?.destroy?.();
+  const pending = typeof doc.destroy === 'function' ? doc.destroy() : doc.loadingTask?.destroy?.();
+  pending?.catch?.(() => {});
 }
 
 export class PdfError extends Error {}
@@ -67,7 +67,7 @@ export const pdfBlob = (bytes) => new Blob([bytes], { type: 'application/pdf' })
  */
 export function parseRanges(text, pageCount) {
   const groups = [];
-  for (const part of text.split(/[,，;；\s]+/).filter(Boolean)) {
+  for (const part of text.trim().replace(/\s*([-–~])\s*/g, '$1').split(/[,，;；\s]+/).filter(Boolean)) {
     const m = part.match(/^(\d*)\s*[-–~]\s*(\d*)$/) || part.match(/^(\d+)$/);
     if (!m) throw new PdfError(part);
     let a, b;
@@ -90,7 +90,7 @@ export function sortable(list, onMove) {
     item.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
   });
-  list.addEventListener('dragend', (e) => e.target.closest?.('[draggable="true"]')?.classList.remove('dragging'));
+  list.addEventListener('dragend', (e) => { e.target.closest?.('[draggable="true"]')?.classList.remove('dragging'); dragIndex = -1; });
   list.addEventListener('dragover', (e) => { if (dragIndex >= 0) e.preventDefault(); });
   list.addEventListener('drop', (e) => {
     if (dragIndex < 0) return;

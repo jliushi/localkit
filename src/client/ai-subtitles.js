@@ -1,5 +1,5 @@
-import { $, t, c, LK, el, dropzone, download, fmtBytes, baseName, status } from './lib.js';
-import { getFFmpeg, run, fmtTime } from './ffmpeg-common.js';
+import { $, t, c, LK, el, dropzone, download, fmtBytes, baseName, status, beginTask, abortable, releaseUrls } from './lib.js';
+import { run, fmtTime } from './ffmpeg-common.js';
 
 const st = status($('#as-status'));
 const bar = $('#as-progress');
@@ -22,12 +22,13 @@ const toTxt = (segs) => segs.map((s) => s.text).join('\n');
 // ---------------------------------------------------------------- audio
 
 /** Decodes the file's audio as 16 kHz mono Float32 samples (what Whisper expects). */
-async function decodeAudio(f) {
+async function decodeAudio(f, signal) {
   if (f.size < 400 * 1024 * 1024) {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-      const buf = await ctx.decodeAudioData(await f.arrayBuffer());
-      ctx.close();
+      let buf;
+      try { buf = await abortable(ctx.decodeAudioData(await f.arrayBuffer()), signal); }
+      finally { await ctx.close(); }
       if (buf.numberOfChannels === 1) return buf.getChannelData(0);
       const out = new Float32Array(buf.length);
       for (let ch = 0; ch < buf.numberOfChannels; ch++) {
@@ -37,17 +38,18 @@ async function decodeAudio(f) {
       return out;
     } catch { /* fall through to ffmpeg for formats the browser can't decode (MKV, AVI, FLV…) */ }
   }
-  const blob = await run(f, ['-i', '{in}', '-vn', '-ac', '1', '-ar', '16000', '-f', 'f32le'], 'audio.raw', 'application/octet-stream');
+  signal.throwIfAborted();
+  const blob = await run(f, ['-i', '{in}', '-vn', '-ac', '1', '-ar', '16000', '-f', 'f32le'], 'audio.raw', 'application/octet-stream', { signal });
   return new Float32Array(await blob.arrayBuffer());
 }
 
 /** Hugging Face, or its public mirror when huggingface.co is unreachable (e.g. in mainland China). */
-async function modelHost(model) {
+async function modelHost(model, signal) {
   for (const host of ['https://huggingface.co/', 'https://hf-mirror.com/']) {
     try {
-      const res = await fetch(`${host}${model}/resolve/main/config.json`, { signal: AbortSignal.timeout(6000) });
+      const res = await fetch(`${host}${model}/resolve/main/config.json`, { signal: AbortSignal.any([signal, AbortSignal.timeout(6000)]) });
       if (res.ok) return host;
-    } catch { /* try the next host */ }
+    } catch { signal.throwIfAborted(); }
   }
   return 'https://huggingface.co/';
 }
@@ -59,9 +61,12 @@ async function hasWebGpu() {
 // ---------------------------------------------------------------- transcription
 
 let worker = null;
-function transcribe(audio, opts) {
+function transcribe(audio, opts, signal) {
   worker ||= new Worker(`${LK.base}/assets/js/whisper.worker.js`, { type: 'module' });
-  return new Promise((resolve, reject) => {
+  const activeWorker = worker;
+  const stop = () => { activeWorker.terminate(); if (worker === activeWorker) worker = null; };
+  signal.addEventListener('abort', stop, { once: true });
+  return abortable(new Promise((resolve, reject) => {
     let live = '';
     worker.onmessage = ({ data }) => {
       if (data.type === 'download') { st.busy(t('downloading', fmtBytes(data.loaded), fmtBytes(data.total))); setBar(data.loaded / data.total); }
@@ -77,7 +82,7 @@ function transcribe(audio, opts) {
     };
     worker.onerror = (e) => reject(new Error(e.message || 'worker error'));
     worker.postMessage({ type: 'run', audio, ...opts }, [audio.buffer]);
-  });
+  }), signal).finally(() => signal.removeEventListener('abort', stop));
 }
 
 async function toSimplified(segs) {
@@ -93,16 +98,19 @@ function cleanSegments(chunks, duration) {
     const text = (ch.text || '').trim();
     if (!text || /^\[.*\]$|^\(.*\)$/.test(text)) continue; // "[Music]", "(applause)" style noise markers
     let [start, end] = ch.timestamp || [0, null];
-    start = Math.max(0, start ?? 0);
-    end = end ?? Math.min(duration, start + 5);
+    start = Math.max(0, Number(start) || 0);
+    if (start >= duration) continue;
+    end = end == null ? Math.min(duration, start + 5) : Number(end);
     if (end <= start) end = start + Math.min(5, Math.max(1, text.length * 0.15));
-    out.push({ start, end, text });
+    if (!Number.isFinite(end)) continue;
+    out.push({ start, end: Math.min(duration, end), text });
   }
+  out.sort((a, b) => a.start - b.start);
   // Never let two subtitles be on screen at once.
   for (let i = 0; i < out.length - 1; i++) {
-    if (out[i].end > out[i + 1].start) out[i].end = Math.max(out[i].start + 0.2, out[i + 1].start - 0.01);
+    if (out[i].end > out[i + 1].start) out[i].end = out[i + 1].start;
   }
-  return out;
+  return out.filter((s) => s.end > s.start);
 }
 
 // ---------------------------------------------------------------- UI
@@ -142,6 +150,12 @@ dropzone($('#as-drop'), {
     isVideo = f.type.startsWith('video') || /\.(mkv|flv|avi|wmv|mov|mp4|webm|m4v|3gp|ts)$/i.test(f.name);
     st.clear();
     $('#as-out').hidden = true;
+    $('#as-live').hidden = true;
+    segments = [];
+    releaseUrls($('#as-burned'));
+    $('#as-burned').replaceChildren();
+    if (video.src.startsWith('blob:')) URL.revokeObjectURL(video.src);
+    if (trackUrl) { URL.revokeObjectURL(trackUrl); trackUrl = null; }
     video.querySelector('track')?.remove();
     video.src = URL.createObjectURL(f);
     $('#as-preview').hidden = false;
@@ -152,18 +166,19 @@ dropzone($('#as-drop'), {
 
 $('#as-go').addEventListener('click', async () => {
   if (!file) return;
+  const task = beginTask({ cancellable: true });
   const started = Date.now();
   $('#as-go').disabled = true;
   $('#as-out').hidden = true;
   $('#as-live').hidden = true;
   try {
     st.busy(t('decoding'));
-    const audio = await decodeAudio(file);
+    const audio = await decodeAudio(file, task.signal);
     const duration = audio.length / 16000;
     if (duration > 3 * 3600) throw new Error(t('tooLong'));
     const model = $('#as-model').value;
     st.busy(t('checkingHost'));
-    const [host, gpu] = await Promise.all([modelHost(model), $('#as-engine').value === 'auto' ? hasWebGpu() : false]);
+    const [host, gpu] = await abortable(Promise.all([modelHost(model, task.signal), $('#as-engine').value === 'auto' ? hasWebGpu() : false]), task.signal);
     st.busy(t('loadingModel'));
     const result = await transcribe(audio, {
       base: `${location.origin}${LK.base}`,
@@ -172,9 +187,10 @@ $('#as-go').addEventListener('click', async () => {
       device: gpu ? 'webgpu' : 'wasm',
       language: $('#as-lang').value,
       task: $('#as-task').value,
-    });
+    }, task.signal);
     segments = cleanSegments(result.chunks, duration);
     if ($('#as-simp').checked && $('#as-task').value === 'transcribe') segments = await toSimplified(segments);
+    task.signal.throwIfAborted();
     if (!segments.length) throw new Error(t('noSpeech'));
     renderSegments();
     updateTrack();
@@ -187,6 +203,7 @@ $('#as-go').addEventListener('click', async () => {
   } finally {
     $('#as-go').disabled = false;
     bar.hidden = true;
+    task.finish();
   }
 });
 
@@ -236,16 +253,19 @@ async function subtitleImage(text, vw, vh, scale) {
 
 $('#as-burn').addEventListener('click', async () => {
   if (!isVideo || !video.videoWidth) { st.error(new Error(t('audioOnly'))); return; }
+  const task = beginTask({ cancellable: true });
   $('#as-burn').disabled = true;
   try {
     st.busy(t('burnLoading'));
-    await getFFmpeg();
     const vw = video.videoWidth, vh = video.videoHeight;
     const scale = Number($('#as-bsize').value);
     const top = $('#as-bpos').value === 'top';
     const margin = Math.round(vh * 0.06);
     const extraFiles = [];
-    for (let i = 0; i < segments.length; i++) extraFiles.push({ name: `sub${i}.png`, data: await subtitleImage(segments[i].text, vw, vh, scale) });
+    for (let i = 0; i < segments.length; i++) {
+      task.signal.throwIfAborted();
+      extraFiles.push({ name: `sub${i}.png`, data: await subtitleImage(segments[i].text, vw, vh, scale) });
+    }
     const inputs = extraFiles.flatMap((f) => ['-i', f.name]);
     const chain = segments.map((s, i) => {
       const from = i === 0 ? '[0:v]' : `[v${i}]`;
@@ -256,11 +276,13 @@ $('#as-burn').addEventListener('click', async () => {
     const blob = await run(file, ['-i', '{in}', ...inputs, '-filter_complex', chain, '-map', '[vout]', '-map', '0:a?',
       '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '22', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart'],
     'burned.mp4', 'video/mp4', {
+      signal: task.signal,
       duration: video.duration,
       extraFiles,
       onProgress: (p) => { setBar(p); st.busy(t('burning', `${Math.round(p * 100)}%`)); },
     });
     const outName = `${baseName(file.name)}_subtitled.mp4`;
+    releaseUrls($('#as-burned'));
     $('#as-burned').replaceChildren(el('video', { src: URL.createObjectURL(blob), controls: true, playsinline: true }),
       el('div', { class: 'row' }, el('button', { class: 'btn', text: `⬇ ${c('download')} ${outName}`, onclick: () => download(blob, outName) })));
     st.ok(t('burnDone', fmtBytes(blob.size)));
@@ -269,5 +291,6 @@ $('#as-burn').addEventListener('click', async () => {
   } finally {
     $('#as-burn').disabled = false;
     bar.hidden = true;
+    task.finish();
   }
 });

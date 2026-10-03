@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": { "node": ">=22.13.0" },
   "description": "Free bilingual (English / 中文) online tools that run entirely in the browser: AI subtitles, PDF tools, image converter, video tools, resume builder, text diff, Base64.",
   "scripts": {
     "build": "node build/build.mjs",
     "serve": "node build/serve.mjs",
-    "test": "node test/run.mjs"
+    "test": "node test/run.mjs",
+    "test:ai": "node test/run.mjs --ai"
   },
   "license": "MIT",
   "dependencies": {

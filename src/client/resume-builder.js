@@ -1,4 +1,5 @@
 import { $, t, LK, el, download, status } from './lib.js';
+import { validateResume } from './resume-data.js';
 
 const KEY = `lk-resume-${LK.lang}`;
 const form = $('#rb-form');
@@ -17,12 +18,13 @@ let data = load();
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
-    if (saved && typeof saved === 'object') return { ...empty(), ...saved };
+    if (saved) return { ...empty(), ...validateResume(saved) };
   } catch { /* no saved draft */ }
   return empty();
 }
 function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch { /* storage full or blocked: keep working in memory */ }
+  try { localStorage.setItem(KEY, JSON.stringify(data)); }
+  catch { st.error(new Error(t('saveFailed'))); }
 }
 
 // ---------------------------------------------------------------- form
@@ -62,13 +64,17 @@ $('#rb-photo').addEventListener('change', async (e) => {
   const f = e.target.files[0];
   e.target.value = '';
   if (!f) return;
-  const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' });
+  let bmp;
+  try {
+  bmp = await createImageBitmap(f, { imageOrientation: 'from-image' });
   const side = Math.min(bmp.width, bmp.height);
   const cv = el('canvas', { width: 360, height: 360 });
   cv.getContext('2d').drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, 360, 360);
   data.photo = cv.toDataURL('image/jpeg', 0.85);
   $('#rb-photo-rm').hidden = false;
   update();
+  } catch (err) { st.error(err); }
+  finally { bmp?.close(); }
 });
 $('#rb-photo-rm').addEventListener('click', () => { data.photo = null; $('#rb-photo-rm').hidden = true; update(); });
 
@@ -143,6 +149,8 @@ function update() {
 // ---------------------------------------------------------------- actions
 
 $('#rb-print').addEventListener('click', () => {
+  clearTimeout(timer);
+  render(); save();
   const root = el('div', { id: 'print-root' }, paper.firstElementChild.cloneNode(true));
   document.body.append(root);
   document.body.classList.add('printing');
@@ -188,17 +196,17 @@ $('#rb-import').addEventListener('change', async (e) => {
   if (!f) return;
   try {
     const obj = JSON.parse(await f.text());
-    if (!obj.localkitResume) throw new Error(t('badImport'));
-    delete obj.localkitResume;
-    data = { ...empty(), ...obj };
+    if (obj?.localkitResume !== 1) throw new Error(t('badImport'));
+    const clean = validateResume(obj);
+    data = { ...empty(), ...clean };
     fillForm();
     update();
     st.clear();
   } catch (err) {
-    st.error(err instanceof SyntaxError ? new Error(t('badImport')) : err);
+    st.error(new Error(t('badImport')));
   }
 });
 
 fillForm();
 render();
-
+window.addEventListener('pagehide', save);

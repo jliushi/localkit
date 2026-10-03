@@ -9,11 +9,11 @@ const count = $('#b64-count');
 let fileBytes = null; // bytes of a dropped file, encoded instead of the text box
 let fileMeta = null;
 
-function bytesToB64(bytes) {
+function bytesToB64(bytes, urlMode = urlSafe.checked) {
   let bin = '';
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   let b64 = btoa(bin);
-  if (urlSafe.checked) b64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  if (urlMode) b64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   return b64;
 }
 
@@ -37,7 +37,7 @@ function encode() {
   st.clear();
   const bytes = fileBytes || new TextEncoder().encode(input.value);
   let b64 = bytesToB64(bytes);
-  if (dataUri.checked) b64 = `data:${fileMeta?.type || 'text/plain;charset=utf-8'};base64,${bytesToB64(bytes)}`;
+  if (dataUri.checked) b64 = `data:${fileMeta?.type || 'text/plain;charset=utf-8'};base64,${bytesToB64(bytes, false)}`;
   show(b64);
   if (fileBytes) st.ok(t('fileEncoded', fileMeta.name, fmtBytes(fileMeta.size)));
 }
@@ -69,9 +69,10 @@ function decode() {
 $('#b64-enc').addEventListener('click', encode);
 $('#b64-dec').addEventListener('click', decode);
 $('#b64-copy').addEventListener('click', (e) => copyText(output.value, e.target));
-$('#b64-swap').addEventListener('click', () => { fileBytes = null; input.value = output.value; show(''); });
-input.addEventListener('input', () => { fileBytes = null; });
+$('#b64-swap').addEventListener('click', () => { fileBytes = null; fileMeta = null; input.value = output.value; show(''); });
+input.addEventListener('input', () => { fileBytes = null; fileMeta = null; });
 urlSafe.addEventListener('change', () => output.value && !dataUri.checked && encode());
+dataUri.addEventListener('change', () => output.value && encode());
 
 dropzone($('#b64-drop'), {
   onFiles: async ([file]) => {
@@ -81,4 +82,3 @@ dropzone($('#b64-drop'), {
     encode();
   },
 });
-
