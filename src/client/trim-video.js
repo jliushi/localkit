@@ -1,4 +1,4 @@
-import { $, t, c, el, LK, icon, filePicker, fileCard, progress, alertBox, errorText, download, fmtBytes, fmtTime, baseName, extOf } from './lib.js';
+import { $, t, c, el, LK, icon, filePicker, fileCard, progress, alertBox, errorText, releaseUrls, download, fmtBytes, fmtTime, baseName, extOf } from './lib.js';
 import { convert, frames, pickVideoCodec, ConversionCanceledError } from './media.js';
 import { prepare, metaLine, thumbnail, VIDEO_ACCEPT, SAMPLE_VIDEO, playerFor } from './video-ui.js';
 import { timeline } from './timeline.js';
@@ -16,6 +16,7 @@ async function load(file) {
   tl?.destroy();
   $('#tv-pick').hidden = true;
   $('#tv-work').hidden = false;
+  releaseUrls($('#tv-result'));
   $('#tv-result').replaceChildren();
   $('#tv-alert').replaceChildren();
   $('#tv-tl').replaceChildren();
@@ -48,18 +49,19 @@ async function trim() {
   const outName = `${baseName(file.name)}-${fmtTime(start, 0).replace(/:/g, '.')}-${fmtTime(end, 0).replace(/:/g, '.')}.${container}`;
   abort = new AbortController();
   $('#tv-go').disabled = true;
+  releaseUrls($('#tv-result'));
   $('#tv-result').replaceChildren();
   video.pause();
-  const task = progress($('#tv-task'), { title: t('trimming'), onCancel: () => abort.abort() });
+  const task = progress($('#tv-task'), { lock: true, title: t('trimming'), onCancel: () => abort.abort() });
   try {
     let blob;
     const mute = $('#tv-mute').checked;
     if (job.legacy) {
       task.title(c('loadingEngine'));
-      await getFFmpeg();
+      await getFFmpeg({ signal: abort.signal });
       task.title(t('trimming'));
       blob = await ffRun(file, ['-ss', start.toFixed(3), '-i', '{in}', '-t', (end - start).toFixed(3), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
-        ...(mute ? ['-an'] : ['-c:a', 'aac', '-b:a', '160k']), '-movflags', '+faststart'], 'out.mp4', 'video/mp4', { duration: end - start, onProgress: (x) => task.set(x) });
+        ...(mute ? ['-an'] : ['-c:a', 'aac', '-b:a', '160k']), '-movflags', '+faststart'], 'out.mp4', 'video/mp4', { signal: abort.signal, duration: end - start, onProgress: (x) => task.set(x) });
     } else {
       const codec = reencode ? await pickVideoCodec(container, job.info.width, job.info.height) : undefined;
       ({ blob } = await convert(file, {

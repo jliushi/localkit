@@ -1760,6 +1760,58 @@ await test('base64:live+file', async () => {
   return page;
 });
 
+await test('convert-image:partial-failure-duplicate-names-and-retry', async () => {
+  const page = await open('/convert-image/');
+  const data = fs.readFileSync(fixture('sample.png')).toString('base64');
+  await page.evaluate((encoded) => {
+    const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([bytes], 'same.png', { type: 'image/png' }));
+    transfer.items.add(new File([bytes], 'same.png', { type: 'image/png' }));
+    transfer.items.add(new File(['broken'], 'broken.png', { type: 'image/png' }));
+    document.querySelector('#cm-pick .drop').dispatchEvent(new DragEvent('drop', { dataTransfer: transfer }));
+  }, data);
+  await page.waitForFunction(() => document.querySelectorAll('#cm-grid .actions').length === 2 && document.querySelectorAll('#cm-grid .failed').length === 1);
+  await page.click('#cm-zip');
+  const { default: JSZip } = await import('jszip');
+  const zip = await JSZip.loadAsync(fs.readFileSync(outFile(await waitDownload(page))));
+  assert(Object.keys(zip.files).length === 2, 'duplicate names both preserved');
+  await page.click('#cm-clear');
+  await upload(page, '#cm-pick', ['sample.png']);
+  await page.waitForSelector('#cm-grid .actions');
+  assert(await page.$$eval('#cm-grid .failed', (nodes) => nodes.length) === 0, 'clear and retry recovers');
+  return page;
+});
+
+await test('resume-builder:reject-invalid-import-without-changing-draft', async () => {
+  const page = await rvOpen('en', 'design');
+  const before = await rvDoc(page);
+  const count = await page.evaluate(() => window.__rv.store.docs.length);
+  const requests = [];
+  page.on('request', (request) => { if (request.url().startsWith('https://example.invalid')) requests.push(request.url()); });
+  const invalid = [
+    { localkitResume: 1, name: { invalid: true } },
+    { localkitResume: 1, name: 'Remote', photo: 'https://example.invalid/photo.png' },
+    { ...before, modules: [{ type: 'work', entries: 'not a list' }] },
+    { ...before, photo: { src: 'https://example.invalid/photo.png', shape: 'square' } },
+  ];
+  for (const value of invalid) {
+    await rvMenu(page, '#rv-docs', 'Import data');
+    await page.evaluate((document) => {
+      const input = window.document.querySelector('input[type=file][accept*=json]');
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([JSON.stringify(document)], 'invalid-resume.json', { type: 'application/json' }));
+      input.files = transfer.files;
+      input.dispatchEvent(new Event('change'));
+    }, value);
+    await sleep(350);
+    assert(await page.evaluate(() => window.__rv.store.docs.length) === count, 'invalid import added a draft');
+    assert(JSON.stringify(await rvDoc(page)) === JSON.stringify(before), 'existing draft changed');
+  }
+  assert(requests.length === 0, 'remote photo was fetched');
+  return page;
+});
+
 await browser.close();
 const failed = results.filter(([, result]) => result !== 'PASS').length;
 console.log(`${results.length - failed}/${results.length} passed`);

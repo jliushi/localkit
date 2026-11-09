@@ -94,7 +94,7 @@ export function sortable(list, onMove) {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', String(from));
   });
-  list.addEventListener('dragend', (e) => { e.target.closest?.('[draggable="true"]')?.classList.remove('dragging'); });
+  list.addEventListener('dragend', (e) => { e.target.closest?.('[draggable="true"]')?.classList.remove('dragging'); from = -1; });
   list.addEventListener('dragover', (e) => { if (from >= 0) e.preventDefault(); });
   list.addEventListener('drop', (e) => {
     if (from < 0) return;

@@ -101,10 +101,10 @@ async function load(file) {
   $('#pe-alert').replaceChildren();
   $('#pe-result').replaceChildren();
   anns = []; history = []; future = []; sel = new Set(); pending = null; zoom = 1; fitMode = true; imgs = {}; formVals = {}; formInfo = null; pgs = [];
-  for (const v of views.values()) v.wrap.remove();
+  for (const v of views.values()) { io.unobserve(v.wrap); dropCanvas(v); v.wrap.remove(); }
   views.clear();
   closeDoc(doc);
-  const task = progress($('#pe-task'), { title: t('loading') });
+  const task = progress($('#pe-task'), { lock: true, title: t('loading') });
   try {
     bytes = await readBytes(file);
     name = baseName(file.name);
@@ -135,9 +135,12 @@ async function load(file) {
   layoutAll();
   setTool('edit');
   updateUndo();
-  setTimeout(async () => { // after the first pages render: warn when the document has no selectable text
-    const l = await ensureLines(views.get(pgs[0].id)).catch(() => null);
-    if (l && !l.lines.length && pgs.length === 1) $('#pe-alert').replaceChildren(alertBox(t('noText'), 'info'));
+  const firstPageId = pgs[0]?.id;
+  setTimeout(async () => {
+    const firstView = views.get(firstPageId);
+    if (!firstView) return;
+    const lines = await ensureLines(firstView).catch(() => null);
+    if (views.get(firstPageId) === firstView && lines && !lines.lines.length && pgs.length === 1) $('#pe-alert').replaceChildren(alertBox(t('noText'), 'info'));
   }, 600);
 }
 
@@ -789,6 +792,7 @@ $('#pe-del').addEventListener('click', () => deleteSel());
 $('#pe-dup').addEventListener('click', () => { copySel(); pasteClip(); });
 
 document.addEventListener('keydown', (e) => {
+  if ($('#app')?.getAttribute('aria-busy') === 'true') return;
   if ($('#pe-work').hidden || $('#pe-sig').open) return;
   const ae = document.activeElement;
   const typing = ae?.isContentEditable || ae?.tagName === 'TEXTAREA' || (ae?.tagName === 'INPUT' && !/^(checkbox|radio|button|color)$/.test(ae.type)) || ae?.tagName === 'SELECT';
@@ -1146,7 +1150,7 @@ $('#pe-save').addEventListener('click', async () => {
   $('#pe-alert').replaceChildren();
   if (!dirty()) { $('#pe-alert').replaceChildren(alertBox(t('empty'), 'info')); return; }
   $('#pe-save').disabled = true;
-  const task = progress($('#pe-task'), { title: t('saving') });
+  const task = progress($('#pe-task'), { lock: true, title: t('saving') });
   try {
     const vps = new Map(), items = new Map();
     for (const pg of pgs) {

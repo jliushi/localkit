@@ -614,7 +614,7 @@ $('#pm-go').addEventListener('click', async () => {
   };
   running = true;
   render();
-  const task = progress($('#pm-task'), { title: t('merging'), onCancel: () => { cfg.cancel = true; } });
+  const task = progress($('#pm-task'), { lock: true, title: t('merging'), onCancel: () => { cfg.cancel = true; } });
   try {
     const nFiles = new Set(pages.map((p) => p.src).filter(Boolean)).size;
     const bytes = await build(cfg, task);

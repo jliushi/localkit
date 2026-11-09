@@ -652,7 +652,7 @@ dialog h3 { margin-top: 0; }
   .rv-btn { padding: 8px; }
   .rv-tools, .rv-etools { display: none !important; }
 }
-.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #111; color: #fff; padding: 10px 16px; border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 60; font-size: .93rem; animation: toast .2s ease-out; max-width: calc(100vw - 32px); }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #111; color: #fff; padding: 10px 16px; border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 60; font-size: .93rem; animation: toast .2s ease-out; max-width: calc(100vw - 32px); pointer-events: none; }
 @keyframes toast { from { opacity: 0; transform: translate(-50%, 10px); } }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .player-fit video { max-height: 46vh; }

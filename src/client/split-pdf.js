@@ -29,6 +29,7 @@ function update() {
   for (const p of $$('.pg', $('#ps-pages'))) {
     p.classList.toggle('selectable', m === 'sel');
     p.classList.toggle('sel', m === 'sel' && selected.has(Number(p.dataset.n)));
+    p.setAttribute('aria-checked', String(selected.has(Number(p.dataset.n))));
   }
   let info = '';
   try {
@@ -46,12 +47,19 @@ async function load(file) {
   selected.clear();
   observer?.disconnect();
   closeDoc(doc);
+  bytes = null; doc = null; count = 0;
+  $('#ps-go').disabled = true;
+  $('#ps-pages').replaceChildren();
   try {
     bytes = await readBytes(file);
     name = baseName(file.name);
     doc = await openForRender(bytes);
     count = doc.numPages;
+    $('#ps-go').disabled = false;
   } catch (e) {
+    bytes = null; doc = null; count = 0;
+    $('#ps-pick').hidden = false;
+    $('#ps-work').hidden = true;
     $('#ps-alert').replaceChildren(alertBox(errorText(e)));
     return;
   }
@@ -98,6 +106,7 @@ $('#ps-ranges').addEventListener('input', update);
 $('#ps-every').addEventListener('input', update);
 
 $('#ps-go').addEventListener('click', async () => {
+  if (!bytes || !count) return;
   let gs;
   try {
     gs = groups();
@@ -108,7 +117,7 @@ $('#ps-go').addEventListener('click', async () => {
   }
   $('#ps-alert').replaceChildren();
   $('#ps-go').disabled = true;
-  const task = progress($('#ps-task'), { title: t('splitting') });
+  const task = progress($('#ps-task'), { lock: true, title: t('splitting') });
   try {
     const { PDFDocument } = await pdflib();
     const src = await openForEdit(bytes);

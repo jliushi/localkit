@@ -2,15 +2,17 @@
 // valid hreflang pairs. Saves screenshots of the home pages.  node test/pages.mjs
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = path.join(ROOT, 'test', 'out');
+const OUT = process.env.TEST_OUT || fs.mkdtempSync(path.join(os.tmpdir(), 'localkit-pages-'));
 const BASE = process.env.BASE_URL || 'http://localhost:8090/localkit';
 fs.mkdirSync(OUT, { recursive: true });
 const sitemap = fs.readFileSync(path.join(ROOT, 'dist', 'sitemap.xml'), 'utf8');
 const paths = [...sitemap.matchAll(/<loc>[^<]*?\/localkit(\/[^<]*)<\/loc>/g)].map((m) => m[1]);
+if (!paths.length) throw new Error('No pages found in sitemap');
 
 const browser = await puppeteer.launch();
 const problems = [];

@@ -33,6 +33,7 @@ npm test -- --only=merge-pdf --shots   # drives real tools in headless Chrome; s
 npm test                         # full output checks, including model downloads (ffmpeg/ffprobe required)
 npm run test:site                # sitemap, bilingual links, metadata, JSON-LD and local/share assets
 npm run test:pages               # every page, both languages, phone and desktop width
+npm run test:deployed            # verify live pages, legacy redirects and deployed JS/share-image hashes against dist/
 node scripts/make-images.mjs      # icon-180.png and bilingual cards in src/assets/og/
 node scripts/make-images.mjs --missing # generate only missing tool/language share images
 ```

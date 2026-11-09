@@ -126,6 +126,7 @@ export default {
   },
   ui: (s) => html`
 <div id="pe-pick"></div>
+<div id="pe-alert"></div>
 <div id="pe-work" hidden>
   <div class="pe-top">
     <div class="pe-tools" id="pe-tools" role="toolbar" aria-label="${s.tSelect}">
@@ -148,7 +149,6 @@ export default {
   </div>
   <p class="note" id="pe-hint"></p>
   <div class="pe-formbar" id="pe-formbar" hidden><span id="pe-formmsg"></span><label class="small"><input type="checkbox" id="pe-flatten"> ${s.flatten}</label></div>
-  <div id="pe-alert"></div>
   <div id="pe-task"></div>
   <div id="pe-result"></div>
   <div class="pe-body">

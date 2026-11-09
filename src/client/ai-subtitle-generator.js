@@ -1,4 +1,4 @@
-import { $, $$, t, c, el, LK, icon, filePicker, fileCard, progress, alertBox, errorText, download, fmtBytes, fmtTime, fmtDuration, parseTime, baseName, toast } from './lib.js';
+import { $, $$, t, c, el, LK, icon, filePicker, fileCard, progress, alertBox, errorText, download, fmtBytes, fmtTime, fmtDuration, parseTime, baseName, toast, abortable, releaseUrls } from './lib.js';
 import { convert, pickVideoCodec, ConversionCanceledError } from './media.js';
 import { prepare, metaLine, thumbnail, MEDIA_ACCEPT, SAMPLE_VIDEO } from './video-ui.js';
 import { getFFmpeg, run as ffRun } from './ffmpeg-common.js';
@@ -34,26 +34,26 @@ function wavToFloat32(buf) {
   throw new Error('no audio data');
 }
 
-async function audio16k(task) {
+async function audio16k(task, signal) {
   if (!job.legacy) {
     const { blob } = await convert(job.file, {
-      container: 'wav', video: { discard: true }, audio: { codec: 'pcm-s16', numberOfChannels: 1, sampleRate: 16000 }, onProgress: (x) => task.set(x),
+      container: 'wav', video: { discard: true }, audio: { codec: 'pcm-s16', numberOfChannels: 1, sampleRate: 16000 }, onProgress: (x) => task.set(x), signal,
     });
     return wavToFloat32(await blob.arrayBuffer());
   }
   task.title(c('loadingEngine'));
-  await getFFmpeg();
+  await getFFmpeg({ signal });
   task.title(t('reading'));
-  const blob = await ffRun(job.file, ['-i', '{in}', '-vn', '-ac', '1', '-ar', '16000', '-f', 'f32le'], 'audio.raw', 'application/octet-stream', { duration: job.info.duration, onProgress: (x) => task.set(x) });
+  const blob = await ffRun(job.file, ['-i', '{in}', '-vn', '-ac', '1', '-ar', '16000', '-f', 'f32le'], 'audio.raw', 'application/octet-stream', { duration: job.info.duration, onProgress: (x) => task.set(x), signal });
   return new Float32Array(await blob.arrayBuffer());
 }
 
-async function modelHost(model) {
+async function modelHost(model, signal) {
   for (const host of ['https://huggingface.co/', 'https://hf-mirror.com/']) {
     try {
-      const res = await fetch(`${host}${model}/resolve/main/config.json`, { signal: AbortSignal.timeout(6000) });
+      const res = await fetch(`${host}${model}/resolve/main/config.json`, { signal: AbortSignal.any([signal, AbortSignal.timeout(6000)]) });
       if (res.ok) return host;
-    } catch { /* next */ }
+    } catch { signal.throwIfAborted(); }
   }
   return 'https://huggingface.co/';
 }
@@ -90,13 +90,15 @@ function cleanSegments(chunks, duration) {
     const text = (ch.text || '').trim();
     if (!text || /^[[(（【].*[\])）】]$/.test(text)) continue; // [Music], (applause)…
     let [start, end] = ch.timestamp || [0, null];
-    start = Math.max(0, start ?? 0);
-    end = end ?? Math.min(duration, start + 5);
+    start = Math.max(0, Number(start) || 0);
+    if (start >= duration) continue;
+    end = end == null ? Math.min(duration, start + 5) : Number(end);
     if (end <= start) end = start + Math.min(5, Math.max(1, text.length * 0.15));
-    out.push({ start, end, text });
+    if (Number.isFinite(end)) out.push({ start, end: Math.min(duration, end), text });
   }
-  for (let i = 0; i < out.length - 1; i++) if (out[i].end > out[i + 1].start) out[i].end = Math.max(out[i].start + 0.2, out[i + 1].start - 0.01);
-  return out;
+  out.sort((first, second) => first.start - second.start);
+  for (let i = 0; i < out.length - 1; i++) if (out[i].end > out[i + 1].start) out[i].end = out[i + 1].start;
+  return out.filter((segment) => segment.end > segment.start);
 }
 
 async function toSimplified(list) {
@@ -109,6 +111,10 @@ async function toSimplified(list) {
 // ---------------------------------------------------------------- flow
 
 async function load(file) {
+  if (job) { URL.revokeObjectURL(job.url); job.media?.input.dispose(); }
+  job = null;
+  segs = [];
+  releaseUrls($('#as-burned'));
   worker?.terminate();
   worker = null;
   $('#as-pick').hidden = true;
@@ -133,27 +139,30 @@ async function generate() {
   $('#as-go').disabled = true;
   $('#as-alert').replaceChildren();
   $('#as-live').hidden = true;
-  let canceled = false;
+  if (!job) return;
+  const controller = new AbortController();
+  const signal = controller.signal;
   const task = progress($('#as-task'), {
+    lock: true,
     title: t('reading'),
-    onCancel: () => { canceled = true; worker?.terminate(); worker = null; task.close(); $('#as-alert').replaceChildren(alertBox(c('canceled'), 'info')); $('#as-go').disabled = false; },
+    onCancel: () => { controller.abort(); worker?.terminate(); worker = null; },
   });
   try {
-    const audio = await audio16k(task);
-    if (canceled) return;
+    const audio = await audio16k(task, signal);
+    signal.throwIfAborted();
     const duration = audio.length / 16000;
     const model = $$('input[name="as-model"]').find((r) => r.checked).value;
     task.title(t('connecting'));
     task.set(null);
-    const [host, gpu] = await Promise.all([modelHost(model), $('#as-engine').value === 'auto' ? hasWebGpu() : false]);
-    if (canceled) return;
+    const [host, gpu] = await abortable(Promise.all([modelHost(model, signal), $('#as-engine').value === 'auto' ? hasWebGpu() : false]), signal);
     task.title(t('loadingModel'));
-    const result = await transcribe(audio, {
+    const result = await abortable(transcribe(audio, {
       base: `${location.origin}${LK.base}`, host, model, device: gpu ? 'webgpu' : 'wasm',
       language: $('#as-lang').value, task: $('#as-translate').checked ? 'translate' : 'transcribe',
-    }, task);
+    }, task), signal);
     let list = cleanSegments(result.chunks, duration);
     if ($('#as-script').value === 'simp' && !$('#as-translate').checked) list = await toSimplified(list);
+    signal.throwIfAborted();
     task.close();
     $('#as-live').hidden = true;
     if (!list.length) { $('#as-alert').replaceChildren(alertBox(t('noSpeech'), 'warn')); return; }
@@ -161,11 +170,10 @@ async function generate() {
     openEditor();
     $('#as-alert').replaceChildren(alertBox(t('doneGen', list.length, fmtDuration((performance.now() - started) / 1000), result.device === 'webgpu' ? 'WebGPU' : 'CPU'), 'info'));
   } catch (e) {
-    if (canceled) return;
-    task.close();
-    $('#as-alert').replaceChildren(alertBox(errorText(e)));
+    $('#as-alert').replaceChildren(signal.aborted ? alertBox(c('canceled'), 'info') : alertBox(errorText(e)));
   } finally {
-    if (!canceled) $('#as-go').disabled = false;
+    task.close();
+    $('#as-go').disabled = false;
   }
 }
 
@@ -348,22 +356,23 @@ async function burn() {
   const abort = new AbortController();
   $('#as-burn').disabled = true;
   $('#as-burned').replaceChildren();
-  const task = progress($('#as-burn-task'), { title: t('burning'), onCancel: () => abort.abort() });
+  const task = progress($('#as-burn-task'), { lock: true, title: t('burning'), onCancel: () => abort.abort() });
   try {
     let blob;
     if (job.legacy) {
       task.title(c('loadingEngine'));
-      await getFFmpeg();
+      await getFFmpeg({ signal: abort.signal });
       task.title(t('burning'));
       const extraFiles = [];
       for (let i = 0; i < list.length; i++) {
+        abort.signal.throwIfAborted();
         const b = await new Promise((r) => bitmapFor(i).toBlob(r, 'image/png'));
         extraFiles.push({ name: `sub${i}.png`, data: new Uint8Array(await b.arrayBuffer()) });
       }
       const chain = list.map((s, i) => `${i === 0 ? '[0:v]' : `[v${i}]`}[${i + 1}:v]overlay=x=(W-w)/2:y=${top ? margin : `H-h-${margin}`}:enable='gte(t,${s.start.toFixed(2)})*lt(t,${s.end.toFixed(2)})'${i === list.length - 1 ? '[vout]' : `[v${i + 1}]`}`).join(';');
       blob = await ffRun(job.file, ['-i', '{in}', ...extraFiles.flatMap((f) => ['-i', f.name]), '-filter_complex', chain, '-map', '[vout]', '-map', '0:a?',
         '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart'],
-      'burned.mp4', 'video/mp4', { duration: job.info.duration, extraFiles, onProgress: (x) => task.set(x) });
+      'burned.mp4', 'video/mp4', { duration: job.info.duration, extraFiles, onProgress: (x) => task.set(x), signal: abort.signal });
     } else {
       const canvas = el('canvas', { width: W, height: H });
       const ctx = canvas.getContext('2d');

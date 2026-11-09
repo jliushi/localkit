@@ -85,7 +85,7 @@ $('#po-save').addEventListener('click', async () => {
   if (!keep.length) { $('#po-alert').replaceChildren(alertBox(t('allDeleted'))); return; }
   $('#po-alert').replaceChildren();
   $('#po-save').disabled = true;
-  const task = progress($('#po-task'), { title: t('saving') });
+  const task = progress($('#po-task'), { lock: true, title: t('saving') });
   try {
     const { PDFDocument, degrees } = await pdflib();
     const out = await PDFDocument.create();

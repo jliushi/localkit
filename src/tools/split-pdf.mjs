@@ -85,6 +85,7 @@ export default {
   },
   ui: (s) => html`
 <div id="ps-pick"></div>
+<div id="ps-alert"></div>
 <div id="ps-work" class="panel" hidden>
   <div id="ps-file"></div>
   <div class="opt"><span class="field-label">${s.mode}</span><div class="chips" role="radiogroup" aria-label="${s.mode}">
@@ -96,7 +97,6 @@ export default {
   <label class="inline-num" id="ps-every-wrap" hidden><span class="field-label">${s.everyN}</span><input type="number" id="ps-every" min="1" value="2"></label>
   <label class="field" id="ps-ranges-wrap" hidden><span>${s.ranges}</span><input type="text" id="ps-ranges" placeholder="${s.rangesPh}"></label>
   <div class="actions"><button class="btn lg" id="ps-go">${s.split}</button><span class="muted" id="ps-info"></span></div>
-  <div id="ps-alert"></div>
   <div id="ps-task"></div>
   <div id="ps-result"></div>
   <div class="bar-sticky" id="ps-selbar"><span class="muted small">${s.hint}</span><span style="flex:1"></span>

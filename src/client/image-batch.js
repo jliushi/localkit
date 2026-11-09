@@ -40,7 +40,16 @@ export async function encode(canvas, type, quality, { quantizePng = false } = {}
 export function batch(opts) {
   const items = []; // { file, img, out, error, node }
   let runId = 0;
+  let working = false;
   const q = (sel) => $(`#${opts.prefix}-${sel}`);
+  const release = (item) => { if (item.out?.url) URL.revokeObjectURL(item.out.url); item.out = null; };
+  const cancel = el('button', { id: `${opts.prefix}-cancel`, type: 'button', class: 'btn ghost', hidden: true, text: c('cancel'), onclick: () => {
+    runId++;
+    working = false;
+    for (const item of items) if (!item.out && !item.error) { item.error = c('canceled'); renderItem(item); }
+    summary();
+  } });
+  q('clear').before(cancel);
 
   const sampleName = opts.sample || 'photo.jpg';
   const sample = { url: `${LK.base}/assets/samples/${sampleName}`, name: sampleName, type: sampleName.endsWith('.heic') ? 'image/heic' : 'image/jpeg' };
@@ -48,6 +57,7 @@ export function batch(opts) {
   filePicker(q('more'), { accept: opts.accept || IMAGE_ACCEPT, multiple: true, compact: true, iconName: 'plus', title: t('add'), onFiles: add });
 
   function summary() {
+    cancel.hidden = !working;
     const done = items.filter((x) => x.out);
     const before = done.reduce((a, x) => a + x.file.size, 0), after = done.reduce((a, x) => a + x.out.blob.size, 0);
     const pct = before ? Math.round((1 - after / before) * 100) : 0;
@@ -81,28 +91,37 @@ export function batch(opts) {
       el('div', { class: 'sizes' }, `${w}×${h} · ${fmtBytes(it.file.size)} → ${fmtBytes(blob.size)} `, opts.showSaving ? el('span', { class: pct >= 0 ? 'saving' : 'growing', text: `${pct >= 0 ? '−' : '+'}${Math.abs(pct)}%` }) : ''),
       el('div', { class: 'actions' },
         el('button', { class: 'btn sm', onclick: () => download(blob, name) }, icon('download'), c('download')),
-        el('button', { class: 'btn ghost sm icon', title: c('remove'), 'aria-label': c('remove'), onclick: () => { items.splice(items.indexOf(it), 1); node.remove(); summary(); } }, icon('x'))));
+        el('button', { class: 'btn ghost sm icon', title: c('remove'), 'aria-label': c('remove'), onclick: () => { release(it); it.img?.close?.(); items.splice(items.indexOf(it), 1); node.remove(); summary(); } }, icon('x'))));
     return node;
   }
 
   async function processAll(list) {
     const id = ++runId;
     const options = opts.readOptions();
-    for (const it of list) {
-      if (id !== runId) return;
-      it.error = null;
-      try {
-        it.img ||= await decodeImage(it.file);
-        const out = await opts.process(it, options);
+    working = true;
+    summary();
+    try {
+      for (const it of list) {
         if (id !== runId) return;
-        if (it.out?.url) URL.revokeObjectURL(it.out.url);
-        it.out = { ...out, url: URL.createObjectURL(out.blob) };
-      } catch (e) {
-        it.error = errorText(e);
+        if (!items.includes(it)) continue;
+        release(it);
+        it.error = null;
+        try {
+          it.img ||= await decodeImage(it.file);
+          const out = await opts.process(it, options);
+          if (id !== runId) return;
+          if (it.out?.url) URL.revokeObjectURL(it.out.url);
+          it.out = { ...out, url: URL.createObjectURL(out.blob) };
+        } catch (e) {
+          if (id !== runId) return;
+          it.error = errorText(e);
+        }
+        renderItem(it);
+        summary();
+        await nextFrame();
       }
-      renderItem(it);
-      summary();
-      await nextFrame();
+    } finally {
+      if (id === runId) { working = false; summary(); }
     }
   }
 
@@ -112,20 +131,20 @@ export function batch(opts) {
     items.push(...fresh);
     for (const it of fresh) q('grid').append(renderItem(it));
     summary();
-    await processAll(fresh);
+    await processAll(items.filter((item) => !item.out));
   }
 
   let debounce = 0;
   function rerun() {
     clearTimeout(debounce);
     debounce = setTimeout(() => {
-      for (const it of items) { it.out = null; renderItem(it); }
+      for (const it of items) { release(it); renderItem(it); }
       processAll(items.slice());
     }, 250);
   }
 
   q('zip').addEventListener('click', () => downloadZip(items.filter((x) => x.out).map((x) => ({ name: x.out.name, blob: x.out.blob })), opts.zipName || 'images.zip'));
-  q('clear').addEventListener('click', () => { runId++; items.length = 0; q('grid').replaceChildren(); summary(); });
+  q('clear').addEventListener('click', () => { runId++; working = false; clearTimeout(debounce); for (const item of items) { release(item); item.img?.close?.(); } items.length = 0; q('grid').replaceChildren(); summary(); });
   return { rerun, items, pick, alert: (m) => q('alert').replaceChildren(alertBox(m)) };
 }
 

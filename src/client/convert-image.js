@@ -23,6 +23,7 @@ export function setup(prefix) {
     sample: prefix === 'hj' ? 'sample.heic' : 'photo.jpg',
     readOptions: () => ({ type: type(), quality: Number(q('q').value) / 100, max: Number(q('max')?.value || 0), bg: q('bg')?.value || '#ffffff' }),
     async process(it, o) {
+      if (!Number.isFinite(o.max) || o.max < 0 || !Number.isInteger(o.max)) throw new Error('Enter a non-negative whole number for the image size.');
       const max = o.type === 'image/x-icon' ? Math.min(o.max || 256, 256) : o.max;
       const cv = prepareCanvas(it.img, max, o.type === 'image/jpeg' ? o.bg : undefined);
       const blob = await encode(cv, o.type, o.quality);

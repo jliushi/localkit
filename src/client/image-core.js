@@ -21,7 +21,7 @@ export async function decodeImage(file) {
   } catch {
     const img = new Image();
     img.src = URL.createObjectURL(blob);
-    await img.decode();
+    try { await img.decode(); } finally { URL.revokeObjectURL(img.src); }
     return img;
   }
 }
@@ -44,6 +44,6 @@ export function drawRotated(src, rot = 0, max = Infinity, background) {
   return cv;
 }
 
-export const toBlob = (canvas, type, quality) => new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('encode failed'))), type, quality));
+export const toBlob = (canvas, type, quality) => new Promise((resolve, reject) => canvas.toBlob((blob) => (blob?.type === type ? resolve(blob) : reject(new Error('This browser cannot encode the requested image format.'))), type, quality));
 
 export const imageSize = dims;

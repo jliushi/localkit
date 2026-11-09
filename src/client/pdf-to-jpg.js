@@ -7,7 +7,11 @@ const selected = new Set();
 const pick = filePicker($('#pj-pick'), { accept: '.pdf,application/pdf', iconName: 'fileText', title: t('drop'), hint: t('dropHint'), sample: SAMPLE_PDF(), onFiles: ([f]) => load(f) });
 
 function update() {
-  for (const p of $$('.pg', $('#pj-pages'))) p.classList.toggle('sel', selected.has(Number(p.dataset.n)));
+  for (const p of $$('.pg', $('#pj-pages'))) {
+    const checked = selected.has(Number(p.dataset.n));
+    p.classList.toggle('sel', checked);
+    p.setAttribute('aria-checked', String(checked));
+  }
   $('#pj-sel').textContent = t('selected', selected.size, count);
 }
 
@@ -18,14 +22,21 @@ async function load(file) {
   $('#pj-result').replaceChildren();
   observer?.disconnect();
   closeDoc(doc);
+  doc = null; count = 0;
+  selected.clear();
+  $('#pj-go').disabled = true;
+  $('#pj-pages').replaceChildren();
   try {
     doc = await openForRender(await readBytes(file));
   } catch (e) {
+    $('#pj-pick').hidden = false;
+    $('#pj-work').hidden = true;
     $('#pj-alert').replaceChildren(alertBox(errorText(e)));
     return;
   }
   name = baseName(file.name);
   count = doc.numPages;
+  $('#pj-go').disabled = false;
   selected.clear();
   for (let n = 1; n <= count; n++) selected.add(n);
   $('#pj-file').replaceChildren(fileCard({ file, meta: `${t('pagesN', count)} · ${fmtBytes(file.size)}`, thumb: await renderPage(doc, 1, 60), onChange: () => pick.open() }));
@@ -55,6 +66,7 @@ $('#pj-all').addEventListener('click', () => { for (let n = 1; n <= count; n++) 
 $('#pj-none').addEventListener('click', () => { selected.clear(); update(); });
 
 $('#pj-go').addEventListener('click', async () => {
+  if (!doc || !count) return;
   const list = [...selected].sort((a, b) => a - b);
   if (!list.length) { $('#pj-alert').replaceChildren(alertBox(t('noneSel'))); return; }
   const type = $$('input[name="pj-fmt"]').find((r) => r.checked).value;
@@ -62,7 +74,7 @@ $('#pj-go').addEventListener('click', async () => {
   const scale = Number($$('input[name="pj-dpi"]').find((r) => r.checked).value) / 72;
   $('#pj-alert').replaceChildren();
   $('#pj-go').disabled = true;
-  const task = progress($('#pj-task'), { title: t('converting', 1, list.length) });
+  const task = progress($('#pj-task'), { lock: true, title: t('converting', 1, list.length) });
   const outs = [];
   try {
     for (let i = 0; i < list.length; i++) {

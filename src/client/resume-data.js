@@ -1,5 +1,7 @@
 // Resume document model: modules, defaults, storage, undo/redo.
-import { LK } from './lib.js';
+import { LK, toast } from './lib.js';
+import { validateResume } from './resume-legacy.js';
+import { validDocument } from './resume-validation.js';
 
 export const lang = LK.lang === 'zh' ? 'zh' : 'en';
 export const uid = (p = 'm') => p + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-2);
@@ -150,9 +152,11 @@ function fromV1(o) {
 
 /** Makes sure a (possibly imported) object is a valid v2 document; null when it is not a resume. */
 export function normalizeDoc(o) {
-  if (!o || typeof o !== 'object') return null;
-  if (o.v !== 2) return (o.exp || o.edu || o.name !== undefined) ? fromV1(o) : null;
-  if (!Array.isArray(o.modules)) return null;
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+  if (o.v !== 2) {
+    try { return (o.exp || o.edu || o.name !== undefined) ? fromV1(validateResume(o)) : null; } catch { return null; }
+  }
+  if (!validDocument(o)) return null;
   const d = { ...blankDoc(), ...o, style: { ...DEFAULT_STYLE, ...(o.style || {}) } };
   d.modules = o.modules.filter((m) => m && MODULE_TYPES[m.type]).map((m) => {
     const base = newModule(m.type === 'custom' && m.kind === 'text' ? 'customText' : m.type, { blank: true });
@@ -183,7 +187,10 @@ export function createStore(onChange) {
   const cur = () => docs.find((d) => d.id === curId);
   const snap = () => JSON.stringify(cur());
   lastSnap = snap();
-  const persist = () => { try { localStorage.setItem(KEY, JSON.stringify({ docs, cur: curId })); } catch { /* quota */ } };
+  const persist = () => {
+    try { localStorage.setItem(KEY, JSON.stringify({ docs, cur: curId })); }
+    catch { toast(lang === 'zh' ? '浏览器未能保存草稿，请在离开页面前导出 JSON 备份。' : 'The browser could not save this draft. Export JSON before leaving this page.', 6000); }
+  };
   const save = () => { clearTimeout(timer); timer = setTimeout(persist, 350); };
 
   const api = {

@@ -146,7 +146,7 @@ export function filePicker(root, opts) {
     input);
   let taking = false;
   const take = async (source) => {
-    if (taking) return;
+    if (taking || root.closest('[aria-busy="true"]')) return;
     taking = true;
     zone.setAttribute('aria-busy', 'true');
     try {
@@ -203,7 +203,8 @@ export function fileCard({ file, thumb, meta, onChange }) {
  * Progress panel with percentage, elapsed/remaining time and an optional Cancel button.
  * const task = progress(container, { title, onCancel }); task.set(0.42); task.text('…'); task.close();
  */
-export function progress(container, { title, onCancel } = {}) {
+export function progress(container, { title, onCancel, lock = false } = {}) {
+  const release = lock ? lockControls(container) : () => {};
   const pct = el('span', { class: 'task-pct' });
   const bar = el('div', { class: 'bar indet' }, el('i'));
   const sub = el('span');
@@ -230,8 +231,48 @@ export function progress(container, { title, onCancel } = {}) {
       const elapsed = (performance.now() - started) / 1000;
       if (p > 0.03 && p < 1 && elapsed > 2) eta.textContent = c('remaining', fmtDuration((elapsed / p) * (1 - p)));
     },
-    close() { node.remove(); },
+    close() { node.remove(); release(); },
   };
+}
+
+export function lockControls(container) {
+  const root = container.closest('#app');
+  if (!root) return () => {};
+  const previous = root.getAttribute('aria-busy');
+  const frozen = [];
+  let branch = container;
+  while (branch !== root && branch.parentElement) {
+    for (const sibling of branch.parentElement.children) {
+      if (sibling === branch) continue;
+      frozen.push([sibling, sibling.inert]);
+      sibling.inert = true;
+    }
+    branch = branch.parentElement;
+  }
+  root.setAttribute('aria-busy', 'true');
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    for (const [node, inert] of frozen) node.inert = inert;
+    if (previous === null) root.removeAttribute('aria-busy');
+    else root.setAttribute('aria-busy', previous);
+  };
+}
+
+export function abortable(promise, signal) {
+  signal.throwIfAborted();
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(signal.reason);
+    signal.addEventListener('abort', abort, { once: true });
+    Promise.resolve(promise).then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+  });
+}
+
+export function releaseUrls(root) {
+  for (const node of root.querySelectorAll('[src]')) {
+    if (node.src?.startsWith('blob:')) URL.revokeObjectURL(node.src);
+  }
 }
 
 export function stat(label, value, good) {

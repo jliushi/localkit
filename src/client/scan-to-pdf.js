@@ -188,7 +188,7 @@ function card(it, i) {
       tbtn('arrowLeft', t('left'), () => { move(items, i, i - 1); render(); }, i === 0),
       tbtn('crop', t('crop'), () => openCrop(it)),
       tbtn('rotateCw', t('rotR'), () => { it.rot = (it.rot + 90) % 360; refresh(it); }),
-      tbtn('x', c('remove'), () => { items.splice(i, 1); render(); }),
+      tbtn('x', c('remove'), () => { it.img?.close?.(); items.splice(i, 1); render(); }),
       tbtn('arrowRight', t('right'), () => { move(items, i, i + 1); render(); }, i === items.length - 1)));
 }
 
@@ -197,6 +197,7 @@ function render() {
   $('#sc-count').textContent = t('pages', items.length);
   $('#sc-pick').hidden = $('#sc-cam-row').hidden = items.length > 0;
   $('#sc-work').hidden = items.length === 0;
+  $('#sc-go').disabled = !items.length || items.some((item) => !item.img || !item.quad);
 }
 sortable(grid, (from, to) => { move(items, from, to); render(); });
 
@@ -290,7 +291,7 @@ $('#sc-go').addEventListener('click', async () => {
   const size = $$('input[name="sc-size"]').find((r) => r.checked).value;
   const mode = filter();
   $('#sc-go').disabled = true;
-  const task = progress($('#sc-task'), { title: t('creating', 1, list.length) });
+  const task = progress($('#sc-task'), { lock: true, title: t('creating', 1, list.length) });
   try {
     const { PDFDocument } = await pdflib();
     const pdf = await PDFDocument.create();

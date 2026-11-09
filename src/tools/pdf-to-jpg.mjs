@@ -75,6 +75,7 @@ export default {
   },
   ui: (s) => html`
 <div id="pj-pick"></div>
+<div id="pj-alert"></div>
 <div id="pj-work" class="panel" hidden>
   <div id="pj-file"></div>
   <div class="opts">
@@ -86,7 +87,6 @@ export default {
     </div></div>
   </div>
   <div class="actions"><button class="btn lg" id="pj-go">${s.convert}</button><span class="muted" id="pj-sel"></span><button class="btn ghost sm" id="pj-all">${s.all}</button><button class="btn ghost sm" id="pj-none">${s.none}</button></div>
-  <div id="pj-alert"></div>
   <div id="pj-task"></div>
   <div id="pj-result"></div>
   <div class="pages" id="pj-pages"></div>

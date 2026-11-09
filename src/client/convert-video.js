@@ -1,4 +1,4 @@
-import { $, $$, t, c, el, LK, icon, filePicker, fileCard, progress, alertBox, errorText, download, fmtBytes, baseName, extOf } from './lib.js';
+import { $, $$, t, c, el, LK, icon, filePicker, fileCard, progress, alertBox, errorText, releaseUrls, download, fmtBytes, baseName, extOf } from './lib.js';
 import { convert, pickVideoCodec, ConversionCanceledError } from './media.js';
 import { Quality } from 'mediabunny';
 import { prepare, metaLine, thumbnail, VIDEO_ACCEPT, SAMPLE_VIDEO, playerFor } from './video-ui.js';
@@ -49,6 +49,7 @@ async function load(file) {
   job = null;
   $('#cx-pick').hidden = true;
   $('#cx-work').hidden = false;
+  releaseUrls($('#cx-result'));
   $('#cx-result').replaceChildren();
   $('#cx-alert').replaceChildren();
   $('#cx-file').replaceChildren(fileCard({ file, meta: t('preparing') }));
@@ -80,14 +81,15 @@ async function go() {
   const name = `${baseName(file.name)}.${container}`;
   abort = new AbortController();
   $('#cx-go').disabled = true;
+  releaseUrls($('#cx-result'));
   $('#cx-result').replaceChildren();
-  const task = progress($('#cx-task'), { title: t('converting'), onCancel: () => abort.abort() });
+  const task = progress($('#cx-task'), { lock: true, title: t('converting'), onCancel: () => abort.abort() });
   try {
     let blob;
     const res = Number($('#cx-res').value);
     if (job.legacy) {
       task.title(c('loadingEngine'));
-      await getFFmpeg();
+      await getFFmpeg({ signal: abort.signal });
       task.title(t('converting'));
       const crf = { high: '20', medium: '25', low: '30' }[$('#cx-q').value];
       const scale = res ? ['-vf', `scale=-2:'min(${res},ih)'`] : [];
@@ -95,7 +97,7 @@ async function go() {
         ? ['-i', '{in}', ...scale, '-c:v', 'libvpx', '-b:v', { high: '3M', medium: '1.5M', low: '700k' }[$('#cx-q').value], '-deadline', 'realtime', '-cpu-used', '8', '-c:a', 'libvorbis']
         : ['-i', '{in}', ...scale, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', crf, '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', ...(container === 'mkv' ? [] : ['-movflags', '+faststart'])];
       blob = await ffRun(file, args, `out.${container}`, { mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', mkv: 'video/x-matroska' }[container],
-        { duration: job.info.duration, onProgress: (x) => task.set(x) });
+        { signal: abort.signal, duration: job.info.duration, onProgress: (x) => task.set(x) });
     } else {
       const copy = canCopy(container);
       const [w, h] = [job.info.width, job.info.height];
