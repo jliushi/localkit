@@ -54,7 +54,7 @@ async function open(p, lang = 'en', width = 1280) {
 }
 const upload = async (page, picker, files) => (await page.$(`${picker} input[type=file]`)).uploadFile(...files.map(fixture));
 const text = (page, sel) => page.$eval(sel, (e) => e.innerText.replace(/\s+/g, ' ').trim());
-const waitText = (page, sel, re, timeout = 60000) => page.waitForFunction((s, src) => new RegExp(src).test(document.querySelector(s)?.innerText || ''), { timeout, polling: 200 }, sel, re.source);
+const waitText = (page, sel, re, timeout = 60000) => page.waitForFunction((selector, source, flags) => new RegExp(source, flags).test(document.querySelector(selector)?.innerText || ''), { timeout, polling: 200 }, sel, re.source, re.flags);
 async function waitDownload(page, n = 1, timeout = 30000) {
   const end = Date.now() + timeout;
   while (page.downloads.length < n && Date.now() < end) await sleep(200);
@@ -93,7 +93,7 @@ async function clickSettled(page, sel) {
 
 async function test(name, fn) {
   if (only && !only.has(name.split(':')[0])) return;
-  if (args['skip-ai'] && /^(ai-|remove-background)/.test(name)) return; // these download hundreds of MB of model files
+  if (args['skip-ai'] && ['ai-subtitle-generator:en+burn', 'ai-subtitle-generator:zh-autodetect', 'remove-background:modnet-blue-jpg-zh'].includes(name)) return;
   const started = Date.now();
   let page;
   lastPage = null;
@@ -351,6 +351,394 @@ await test('trim-video:handles', async () => {
   const name = await waitDownload(page);
   const d = Number(probe(name).format.duration);
   assert(d > 3.8 && d < 6, `duration ${d}`);
+  return page;
+});
+
+// Display size of a video stream, honouring a rotation flag in the file (what players actually show).
+const displaySize = (s) => {
+  const rot = Math.abs(Number((s.side_data_list || []).find((d) => d.rotation !== undefined)?.rotation ?? s.tags?.rotate ?? 0)) % 180;
+  return rot === 90 ? [s.height, s.width] : [s.width, s.height];
+};
+const grayFrame = (args, input, at = 1) => execFileSync('ffmpeg', ['-v', 'error', '-ss', String(at), '-i', input, ...args, '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'gray', '-'], { maxBuffer: 1 << 24 });
+/** Mean absolute pixel difference between the output's frame (autorotated) and the source clip with an ffmpeg filter applied. */
+function frameDiff(outName, refFilter, src = 'clip-en.mp4') {
+  const a = grayFrame(['-vf', 'scale=24:24'], outFile(outName));
+  const b = grayFrame(['-vf', `${refFilter ? `${refFilter},` : ''}scale=24:24`], fixture(src));
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += Math.abs(a[i] - b[i]);
+  return sum / a.length;
+}
+
+await test('blur-video:timed-mask-export-mobile', async () => {
+  const page = await open('/blur-video/', 'zh', 390);
+  await upload(page, '#bv-pick', ['clip-en.mp4']);
+  await page.waitForSelector('#bv-stage video');
+  await page.click('#bv-go');
+  assert(await page.$('#bv-alert .alert'), 'empty mask has guidance');
+  await page.$eval('.bv-layer', (node) => node.scrollIntoView({ block: 'center' }));
+  await sleep(400);
+  const bounds = await (await page.$('.bv-layer')).boundingBox();
+  await page.mouse.move(bounds.x + bounds.width * .25, bounds.y + bounds.height * .25);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width * .75, bounds.y + bounds.height * .75, { steps: 8 });
+  await page.mouse.up();
+  await page.click('input[name="bv-fx"][value="box"] + span');
+  await page.click('#bv-list input[type="checkbox"]');
+  await page.$$eval('#bv-list input[type="text"]', (inputs) => {
+    inputs[1].value = '00:02';
+    inputs[1].dispatchEvent(new Event('change'));
+  });
+  await page.click('#bv-go');
+  await page.waitForSelector('#bv-result .result', { timeout: 120000 });
+  await clickSettled(page, '#bv-result .btn.lg');
+  const name = await waitDownload(page);
+  const info = probe(name);
+  assert(info.streams.some((stream) => stream.codec_type === 'audio'), 'audio preserved');
+  assert(frameDiff(name, 'drawbox=x=iw/4:y=ih/4:w=iw/2:h=ih/2:color=black:t=fill') < 10, 'exported mask matches selected region');
+  const pixels = grayFrame(['-vf', 'crop=100:100:270:130'], outFile(name), 3);
+  assert(pixels.reduce((total, value) => total + value, 0) / pixels.length > 20, 'mask ends at selected time');
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= 390), 'no phone overflow');
+  return page;
+});
+
+await test('rotate-video:right-lossless', async () => {
+  const page = await open('/rotate-video/');
+  await upload(page, '#rv-pick', ['clip-en.mp4']);
+  await page.waitForSelector('#rv-stage video');
+  await page.click('#rv-right');
+  await waitText(page, '#rv-state', /360×640/);
+  const box = await page.$eval('.rv-box', (e) => [e.clientWidth, e.clientHeight]);
+  assert(box[1] > box[0], `preview box ${box}`);
+  await page.click('#rv-go');
+  await page.waitForSelector('#rv-result .result', { timeout: 60000 });
+  await page.$eval('#rv-result .btn.lg', (e) => e.click());
+  const name = await waitDownload(page);
+  const info = probe(name);
+  const v = info.streams.find((s) => s.codec_type === 'video');
+  const [w, h] = displaySize(v);
+  assert(w === 360 && h === 640, `display ${w}x${h}`);
+  assert(v.codec_name === 'h264' && v.width === 640, `lossless should keep coded size: ${v.codec_name} ${v.width}x${v.height}`);
+  assert(info.streams.some((s) => s.codec_type === 'audio'), 'audio kept');
+  assert(Math.abs(Number(info.format.duration) - 13.84) < 0.5, `duration ${info.format.duration}`);
+  assert(frameDiff(name, 'transpose=1') < 12, `orientation differs: ${frameDiff(name, 'transpose=1')}`);
+  assert(frameDiff(name, 'transpose=2') > 25, 'rotation direction not distinguishable');
+  assert(!page.errors.length, page.errors.join('; '));
+  return page;
+});
+
+await test('rotate-video:reencode-flip-zh', async () => {
+  const page = await open('/rotate-video/', 'zh');
+  await upload(page, '#rv-pick', ['clip-en.mp4']);
+  await page.waitForSelector('#rv-stage video');
+  await page.click('#rv-fv');
+  await page.click('#rv-left');
+  await waitText(page, '#rv-state', /旋转 270°，垂直翻转 · 显示为 360×640/);
+  await page.click('#rv-reencode');
+  await page.click('#rv-go');
+  await page.waitForSelector('#rv-result .result', { timeout: 120000 });
+  await page.$eval('#rv-result .btn.lg', (e) => e.click());
+  const name = await waitDownload(page);
+  const info = probe(name);
+  const v = info.streams.find((s) => s.codec_type === 'video');
+  assert(v.width === 360 && v.height === 640, `baked size ${v.width}x${v.height}`);
+  assert(!(v.side_data_list || []).some((d) => d.rotation), 'rotation should be baked in, not a flag');
+  assert(info.streams.some((s) => s.codec_type === 'audio'), 'audio kept');
+  // rotate 270 (counter-clockwise) then flip vertically
+  const d = frameDiff(name, 'transpose=2,vflip');
+  assert(d < 14, `orientation differs: ${d}`);
+  assert(frameDiff(name, 'transpose=2') > 25, 'vertical flip not applied');
+  return page;
+});
+
+await test('rotate-video:flip-h-existing-rotation', async () => {
+  const page = await open('/rotate-video/');
+  await upload(page, '#rv-pick', ['rotated.mp4']);
+  await page.waitForSelector('#rv-stage video');
+  await waitText(page, '#rv-state', /360×640/); // already shows portrait because of its 90° flag
+  await page.click('#rv-fh');
+  await page.click('#rv-go');
+  await page.waitForSelector('#rv-result .result', { timeout: 60000 });
+  await page.$eval('#rv-result .btn.lg', (e) => e.click());
+  const name = await waitDownload(page);
+  const [w, h] = displaySize(probe(name).streams.find((s) => s.codec_type === 'video'));
+  assert(w === 360 && h === 640, `display ${w}x${h}`);
+  const d = frameDiff(name, 'hflip', 'rotated.mp4');
+  assert(d < 14, `orientation differs: ${d}`);
+  return page;
+});
+
+const setNum = async (page, id, v) => { await page.$eval(id, (e, val) => { e.value = val; e.dispatchEvent(new Event('input', { bubbles: true })); }, String(v)); };
+const numVals = (page) => page.$$eval('.cr-nums input', (is) => is.map((i) => Number(i.value)));
+
+await test('crop-video:square-preset', async () => {
+  const page = await open('/crop-video/');
+  await upload(page, '#cr-pick', ['clip-en.mp4']);
+  await page.waitForSelector('#cr-stage video');
+  await page.click('input[name="cr-ratio"][value="1:1"] + span');
+  const [x, y, w, h] = await numVals(page);
+  assert(w === 360 && h === 360 && y === 0 && x === 140, `box ${x},${y},${w},${h}`);
+  await page.click('#cr-go');
+  await page.waitForSelector('#cr-result .result', { timeout: 120000 });
+  await page.$eval('#cr-result .btn.lg', (e) => e.click());
+  const name = await waitDownload(page);
+  const info = probe(name);
+  const v = info.streams.find((s) => s.codec_type === 'video');
+  assert(v.width === 360 && v.height === 360, `${v.width}x${v.height}`);
+  assert(info.streams.some((s) => s.codec_type === 'audio'), 'audio kept');
+  assert(Math.abs(Number(info.format.duration) - 13.84) < 0.5, `duration ${info.format.duration}`);
+  const d = frameDiff(name, 'crop=360:360:140:0');
+  assert(d < 14, `content differs from the expected crop: ${d}`);
+  assert(!page.errors.length, page.errors.join('; '));
+  return page;
+});
+
+await test('crop-video:9x16-drag-zh', async () => {
+  const page = await open('/crop-video/', 'zh');
+  await upload(page, '#cr-pick', ['clip-en.mp4']);
+  await page.waitForSelector('#cr-stage video');
+  await page.click('input[name="cr-ratio"][value="9:16"] + span');
+  let [x, y, w, h] = await numVals(page);
+  assert(h === 360 && w === 202, `9:16 box ${w}x${h}`);
+  // drag the box to the right with the mouse
+  const b = await (await page.$('.cr-box')).boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(b.x + b.width / 2 + 120, b.y + b.height / 2 + 20, { steps: 6 });
+  await page.mouse.up();
+  [x, y, w, h] = await numVals(page);
+  assert(x > 140 && x % 2 === 0 && y === 0 && w === 202 && h === 360, `after move ${x},${y},${w},${h}`);
+  // resize from the bottom-right corner: the 9:16 ratio must stay locked
+  const hd = await (await page.$('.cr-h.se')).boundingBox();
+  await page.mouse.move(hd.x + hd.width / 2, hd.y + hd.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(hd.x + hd.width / 2 - 30, hd.y + hd.height / 2 - 40, { steps: 6 });
+  await page.mouse.up();
+  const [x2, y2, w2, h2] = await numVals(page);
+  assert(w2 < 202 && Math.abs(w2 / h2 - 9 / 16) < 0.02 && x2 === x, `after resize ${x2},${y2},${w2},${h2}`);
+  await waitText(page, '#cr-out', new RegExp(`${w2}×${h2}`));
+  await page.click('#cr-go');
+  await page.waitForSelector('#cr-result .result', { timeout: 120000 });
+  await page.$eval('#cr-result .btn.lg', (e) => e.click());
+  const name = await waitDownload(page);
+  const v = probe(name).streams.find((s) => s.codec_type === 'video');
+  assert(v.width === w2 && v.height === h2, `${v.width}x${v.height} vs ${w2}x${h2}`);
+  const d = frameDiff(name, `crop=${w2}:${h2}:${x2}:${y2}`);
+  assert(d < 20, `content differs: ${d}`);
+  assert(frameDiff(name, `crop=${w2}:${h2}:${x2 - 60}:${y2}`) > d + 8, 'crop offset not distinguishable');
+  return page;
+});
+
+await test('crop-video:numbers-free+rotated-source', async () => {
+  const page = await open('/crop-video/');
+  await upload(page, '#cr-pick', ['rotated.mp4']); // stored 640×360 with a 90° flag, so it displays 360×640
+  await page.waitForSelector('#cr-stage video');
+  let vals = await numVals(page);
+  assert(vals[2] === 360 && vals[3] === 640, `full frame ${vals}`);
+  await setNum(page, '#cr-h', 300);
+  await setNum(page, '#cr-w', 300);
+  await setNum(page, '#cr-y', 100);
+  vals = await numVals(page);
+  assert(vals[0] === 0 && vals[1] === 100 && vals[2] === 300 && vals[3] === 300, `numbers ${vals}`);
+  await setNum(page, '#cr-w', 5000); // can never leave the frame
+  vals = await numVals(page);
+  assert(vals[2] === 360 && vals[0] === 0, `clamped ${vals}`);
+  await setNum(page, '#cr-w', 300);
+  await page.click('#cr-go');
+  await page.waitForSelector('#cr-result .result', { timeout: 120000 });
+  await page.$eval('#cr-result .btn.lg', (e) => e.click());
+  const name = await waitDownload(page);
+  const v = probe(name).streams.find((s) => s.codec_type === 'video');
+  const [w, h] = displaySize(v);
+  assert(w === 300 && h === 300, `display ${w}x${h}`);
+  const d = frameDiff(name, 'crop=300:300:0:100', 'rotated.mp4');
+  assert(d < 14, `content differs: ${d}`);
+  return page;
+});
+
+await test('crop-video:whole-frame-warns', async () => {
+  const page = await open('/crop-video/');
+  await upload(page, '#cr-pick', ['clip-en.mp4']);
+  await page.waitForSelector('#cr-stage video');
+  await page.click('#cr-go');
+  await waitText(page, '#cr-alert', /whole video/);
+  return page;
+});
+
+/** Dominant frequency of the first audio stream (zero-crossing rate of the middle 60 %). */
+function audioFreq(name) {
+  const raw = execFileSync('ffmpeg', ['-v', 'error', '-i', outFile(name), '-vn', '-ac', '1', '-ar', '48000', '-f', 's16le', '-'], { maxBuffer: 1 << 28 });
+  const s = new Int16Array(raw.buffer, raw.byteOffset, Math.floor(raw.length / 2));
+  const a = Math.floor(s.length * 0.2), b = Math.floor(s.length * 0.8);
+  let z = 0;
+  for (let i = a + 1; i < b; i++) if (s[i - 1] < 0 && s[i] >= 0) z++;
+  return z / ((b - a) / 48000);
+}
+const streamDur = (info, type) => Number(info.streams.find((s) => s.codec_type === type)?.duration ?? NaN);
+
+await test('video-speed:2x-keeps-pitch', async () => {
+  const page = await open('/video-speed/');
+  await upload(page, '#vs-pick', ['tone-5s.mp4']);
+  await page.waitForSelector('#vs-player video');
+  await waitText(page, '#vs-est', /0:03/); // 2.5 s rounds to 3 s in the shared duration formatter
+  assert(await page.$eval('#vs-player video', (v) => v.playbackRate) === 2, 'preview playbackRate');
+  await page.click('#vs-go');
+  await page.waitForSelector('#vs-result .result', { timeout: 120000 });
+  await page.$eval('#vs-result .btn.lg', (e) => e.click());
+  const name = await waitDownload(page);
+  const info = probe(name);
+  const v = info.streams.find((s) => s.codec_type === 'video');
+  assert(v.codec_name === 'h264' && v.width === 640, `${v.codec_name} ${v.width}`);
+  const vd = streamDur(info, 'video'), ad = streamDur(info, 'audio');
+  assert(Math.abs(Number(info.format.duration) - 2.5) < 0.25, `duration ${info.format.duration}`);
+  assert(Math.abs(vd - 2.5) < 0.25 && Math.abs(ad - 2.5) < 0.25, `video ${vd} audio ${ad}`);
+  const f = audioFreq(name);
+  assert(f > 420 && f < 460, `pitch changed: ${f} Hz`);
+  assert(!page.errors.length, page.errors.join('; '));
+  return page;
+});
+
+await test('video-audio:mute-lossless', async () => {
+  const page = await open('/video-audio/');
+  await upload(page, '#va-pick', ['tone-5s.mp4']);
+  await page.waitForFunction(() => !document.querySelector('#va-go').disabled);
+  await page.click('#va-go');
+  await page.waitForSelector('#va-result .result', { timeout: 60000 });
+  await page.$eval('#va-result .btn.lg', e => e.click());
+  const name = await waitDownload(page), info = probe(name);
+  assert(info.streams.filter(s => s.codec_type === 'audio').length === 0, 'muted output has an audio track');
+  assert(Math.abs(Number(info.format.duration) - 5) < 0.1, `duration ${info.format.duration}`);
+  assert(frameDiff(name, 'null', 'tone-5s.mp4') < 1, 'muting changed the video pixels');
+  return page;
+});
+
+function pcm(name, start, duration) {
+  const raw = execFileSync('ffmpeg', ['-v', 'error', '-ss', String(start), '-i', outFile(name), '-t', String(duration), '-vn', '-ac', '1', '-ar', '48000', '-f', 's16le', '-']);
+  return new Int16Array(raw.buffer, raw.byteOffset, Math.floor(raw.length / 2));
+}
+const rms = a => Math.sqrt(a.reduce((sum, x) => sum + (x / 32768) ** 2, 0) / a.length);
+function toneAmplitude(a, frequency) {
+  let re = 0, im = 0;
+  for (let i = 0; i < a.length; i++) {
+    re += a[i] / 32768 * Math.cos(2 * Math.PI * frequency * i / 48000);
+    im += a[i] / 32768 * Math.sin(2 * Math.PI * frequency * i / 48000);
+  }
+  return 2 * Math.hypot(re, im) / a.length;
+}
+async function audioPage(mode, lang = 'en', source = 'tone-5s.mp4', music = 'music-880hz-1s.wav') {
+  const page = await open('/video-audio/', lang);
+  await upload(page, '#va-pick', [source]);
+  await page.waitForSelector('#va-player video');
+  await page.click(`input[name="va-mode"][value="${mode}"] + span`);
+  await upload(page, '#va-music-pick', [music]);
+  await page.waitForFunction(() => !document.querySelector('#va-go').disabled);
+  return page;
+}
+async function audioSave(page) {
+  await page.click('#va-go');
+  await page.waitForFunction(() => document.querySelector('#va-result .result') || (document.querySelector('#va-alert').innerText && !document.querySelector('#va-go').disabled), { timeout: 120000 });
+  assert(await page.$('#va-result .result'), await text(page, '#va-alert'));
+  await page.$eval('#va-result .btn.lg', e => e.click());
+  return waitDownload(page);
+}
+
+await test('video-audio:replace-loop', async () => {
+  const page = await audioPage('replace');
+  const name = await audioSave(page), info = probe(name);
+  assert(Math.abs(streamDur(info, 'audio') - 5) < 0.1, `audio duration ${streamDur(info, 'audio')}`);
+  assert(Math.abs(streamDur(info, 'video') - 5) < 0.1, `video duration ${streamDur(info, 'video')}`);
+  assert(Math.abs(audioFreq(name) - 880) < 20, 'replacement music has the wrong frequency');
+  assert(rms(pcm(name, 4, 0.8)) > 0.05, 'short music was not looped to the end');
+  assert(frameDiff(name, 'null', 'tone-5s.mp4') < 1, 'replacing sound changed video pixels');
+  return page;
+});
+
+await test('video-audio:mix-volume-fade-zh', async () => {
+  const page = await audioPage('mix', 'zh');
+  await setNum(page, '#va-volume', 50);
+  await page.select('#va-fade', '2');
+  const name = await audioSave(page);
+  const early = pcm(name, 1.2, 0.5), late = pcm(name, 4.6, 0.25);
+  const voice = toneAmplitude(early, 440), music = toneAmplitude(early, 880);
+  assert(voice > 0.07 && music > 0.025, `missing mix components: ${voice}, ${music}`);
+  assert(music < voice * 0.8, `music volume not reduced: ${music}/${voice}`);
+  assert(toneAmplitude(late, 880) < music * 0.3, 'music did not fade out');
+  assert(toneAmplitude(late, 440) > voice * 0.8, 'fade changed original voice');
+  return page;
+});
+
+await test('video-audio:play-once-pads-silence', async () => {
+  const page = await audioPage('replace');
+  await page.select('#va-loop', 'once');
+  const name = await audioSave(page), info = probe(name);
+  assert(Math.abs(streamDur(info, 'audio') - 5) < 0.1, 'audio does not cover full video');
+  assert(rms(pcm(name, 0.1, 0.7)) > 0.05, 'music missing');
+  assert(rms(pcm(name, 2, 2)) < 0.003, 'Play once unexpectedly repeats the music');
+  return page;
+});
+
+await test('video-audio:silent-source-trims-long-music', async () => {
+  const page = await audioPage('mix', 'en', 'merge-c-silent.mp4', 'music-440hz-5s.wav');
+  const name = await audioSave(page), info = probe(name);
+  const original = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_format', '-of', 'json', fixture('merge-c-silent.mp4')]).toString());
+  assert(Math.abs(streamDur(info, 'audio') - Number(original.format.duration)) < 0.1, 'music not trimmed to silent source length');
+  assert(rms(pcm(name, 0.2, 0.5)) > 0.05, 'silent video was not given music');
+  return page;
+});
+
+await test('video-audio:cancel-and-retry', async () => {
+  const page = await audioPage('replace');
+  await page.click('#va-go');
+  await page.waitForSelector('#va-task .task');
+  await page.click('#va-task button');
+  await waitText(page, '#va-alert', /cancel/i);
+  assert(!(await page.$('#va-result .result')), 'canceled operation produced a result');
+  const name = await audioSave(page);
+  assert(probe(name).streams.some(s => s.codec_type === 'audio'), 'retry failed to produce audio');
+  return page;
+});
+
+await test('video-audio:play-once-fades-at-music-end', async () => {
+  const page = await audioPage('replace');
+  await page.select('#va-loop', 'once');
+  await page.select('#va-fade', '1');
+  const name = await audioSave(page);
+  const early = rms(pcm(name, 0.1, 0.1)), late = rms(pcm(name, 0.8, 0.1));
+  assert(early > 0.05 && late < early * 0.3, `fade did not follow music ending: ${early}, ${late}`);
+  return page;
+});
+
+await test('video-speed:slow-and-remove-audio-zh', async () => {
+  const page = await open('/video-speed/', 'zh');
+  await upload(page, '#vs-pick', ['tone-5s.mp4']);
+  await page.waitForSelector('#vs-player video');
+  await page.click('input[name="vs-speed"][value="0.5"] + span');
+  await waitText(page, '#vs-est', /0:10/);
+  await page.click('input[name="vs-audio"][value="remove"] + span');
+  await page.click('#vs-go');
+  await page.waitForSelector('#vs-result .result', { timeout: 120000 });
+  await page.$eval('#vs-result .btn.lg', (e) => e.click());
+  const name = await waitDownload(page);
+  const info = probe(name);
+  assert(!info.streams.some((s) => s.codec_type === 'audio'), 'audio should be removed');
+  assert(Math.abs(Number(info.format.duration) - 10) < 0.5, `duration ${info.format.duration}`);
+  return page;
+});
+
+await test('video-speed:slider-4x+legacy-avi', async () => {
+  const page = await open('/video-speed/');
+  await page.waitForSelector('#vs-pick');
+  await upload(page, '#vs-pick', ['clip.avi']);
+  await page.waitForSelector('#vs-player video', { timeout: 30000 });
+  await page.$eval('#vs-range', (e) => { e.value = '2'; e.dispatchEvent(new Event('input', { bubbles: true })); });
+  await waitText(page, '#vs-val', /^4×$/);
+  await page.click('#vs-go');
+  await page.waitForSelector('#vs-result .result', { timeout: 240000 });
+  await page.$eval('#vs-result .btn.lg', (e) => e.click());
+  const name = await waitDownload(page);
+  const info = probe(name);
+  const d = Number(info.format.duration);
+  assert(d > 1.5 && d < 2.6, `duration ${d}`); // 7.9 s at 4× is about 2 s
+  assert(info.streams.some((s) => s.codec_type === 'audio'), 'audio kept');
   return page;
 });
 

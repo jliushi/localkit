@@ -31,17 +31,48 @@ export function mediaDuration(file) {
   });
 }
 
+/** Read stream metadata locally when the browser cannot inspect a legacy container. */
+export async function probeMedia(file, { signal } = {}) {
+  signal?.throwIfAborted();
+  const ff = await getFFmpeg();
+  signal?.throwIfAborted();
+  const dir = `/probe-${Date.now()}`;
+  const name = `probe-${Date.now()}.json`;
+  const cancel = () => { ff.terminate(); ffmpegPromise = null; };
+  signal?.addEventListener('abort', cancel, { once: true });
+  try {
+    await ff.createDir(dir);
+    await ff.mount('WORKERFS', { files: [file] }, dir);
+    const code = await ff.ffprobe(['-v', 'error', '-show_streams', '-show_format', '-of', 'json', `${dir}/${file.name}`, '-o', name]);
+    const result = JSON.parse(new TextDecoder().decode(await ff.readFile(name)));
+    if (![0, -1].includes(code) || !Array.isArray(result.streams) || !result.streams.length || !Number.isFinite(Number(result.format?.duration))) throw new Error('The media file could not be read.');
+    const video = result.streams.find(s => s.codec_type === 'video');
+    const audio = result.streams.find(s => s.codec_type === 'audio');
+    return { duration: Number(result.format.duration), width: video?.width || 0, height: video?.height || 0, audio: !!audio, size: file.size };
+  } catch (e) {
+    signal?.throwIfAborted();
+    throw e;
+  } finally {
+    signal?.removeEventListener('abort', cancel);
+    await ff.deleteFile(name).catch(() => {});
+    await ff.unmount(dir).catch(() => {});
+    await ff.deleteDir(dir).catch(() => {});
+  }
+}
+
 /**
  * Runs ffmpeg on `file` (mounted read-only, not copied) and returns the output as a Blob.
  * args: ffmpeg arguments with "{in}" for the input path; output goes to `outName`.
  * onProgress(0..1) uses the "time=" log lines against `duration`.
  * extraFiles: [{ name, data: Uint8Array }] written to the working directory first (e.g. overlay images).
  */
-export async function run(file, args, outName, mime, { duration, onProgress, onLog, extraFiles = [] } = {}) {
+export async function run(file, args, outName, mime, { duration, onProgress, onLog, extraFiles = [], signal } = {}) {
+  signal?.throwIfAborted();
   const ff = await getFFmpeg();
+  signal?.throwIfAborted();
+  const cancel = () => { ff.terminate(); ffmpegPromise = null; };
+  signal?.addEventListener('abort', cancel, { once: true });
   const dir = `/in${Date.now()}`;
-  await ff.createDir(dir);
-  await ff.mount('WORKERFS', { files: [file] }, dir);
   const logs = [];
   const onLogEvent = ({ message }) => {
     logs.push(message);
@@ -51,8 +82,10 @@ export async function run(file, args, outName, mime, { duration, onProgress, onL
     if (m && duration && onProgress) onProgress(Math.min(1, (Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3])) / duration));
   };
   ff.on('log', onLogEvent);
-  for (const f of extraFiles) await ff.writeFile(f.name, f.data);
   try {
+    await ff.createDir(dir);
+    await ff.mount('WORKERFS', { files: [file] }, dir);
+    for (const f of extraFiles) await ff.writeFile(f.name, f.data);
     const full = args.map((a) => (a === '{in}' ? `${dir}/${file.name}` : a));
     const code = await ff.exec([...full, outName]);
     if (code !== 0) {
@@ -62,8 +95,13 @@ export async function run(file, args, outName, mime, { duration, onProgress, onL
     const data = await ff.readFile(outName);
     await ff.deleteFile(outName);
     return new Blob([data.buffer], { type: mime });
+  } catch (e) {
+    signal?.throwIfAborted();
+    throw e;
   } finally {
+    signal?.removeEventListener('abort', cancel);
     ff.off('log', onLogEvent);
+    await ff.deleteFile(outName).catch(() => {});
     await ff.unmount(dir).catch(() => {});
     await ff.deleteDir(dir).catch(() => {});
     for (const f of extraFiles) await ff.deleteFile(f.name).catch(() => {});

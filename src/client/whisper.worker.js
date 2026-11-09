@@ -27,6 +27,7 @@ async function load(model, device, post) {
     }
   };
   const dtype = device === 'webgpu' ? { encoder_model: 'fp32', decoder_model_merged: 'q4' } : 'q8';
+  if (current.pipe) { await current.pipe.dispose(); current = { key: null, pipe: null }; }
   const pipe = await pipeline('automatic-speech-recognition', model, { device, dtype, progress_callback });
   current = { key, pipe };
   return pipe;

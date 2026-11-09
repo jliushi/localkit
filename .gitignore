@@ -6,3 +6,6 @@ test/scratch/
 test/fixtures/phone-1080p.mp4
 test/fixtures/bigphoto.jpg
 test/fixtures/heavy.pdf
+test/fixtures/tone-5s.mp4
+test/fixtures/music-440hz-5s.wav
+test/fixtures/music-880hz-1s.wav

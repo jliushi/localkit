@@ -40,6 +40,8 @@ async function loadTools() {
     tools.push((await import(pathToFileURL(path.join(dir, f)).href)).default);
   }
   for (const t of tools) if (!TOOL_ORDER.includes(t.id)) throw new Error(`Tool ${t.id} missing from TOOL_ORDER`);
+  for (const id of TOOL_ORDER) if (!tools.some((tool) => tool.id === id)) throw new Error(`Tool ${id} missing from src/tools`);
+  if (new Set(tools.map((tool) => tool.id)).size !== tools.length) throw new Error('Duplicate tool ids');
   return tools.sort((a, b) => TOOL_ORDER.indexOf(a.id) - TOOL_ORDER.indexOf(b.id));
 }
 

@@ -2,20 +2,22 @@ import { $, t, el, icon, alertBox, download, fmtBytes, copyText } from './lib.js
 
 const T = $('#b6-text'), B = $('#b6-b64');
 let file = null; // { bytes, name, type } when a file was dropped on the text side
+let previewURL = null;
 
-function bytesToB64(bytes) {
+function bytesToB64(bytes, urlSafe = $('#b6-url').checked) {
   let bin = '';
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   let s = btoa(bin);
-  if ($('#b6-url').checked) s = s.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  if (urlSafe) s = s.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   return s;
 }
 
 /** Accepts standard or URL-safe Base64, with or without padding, whitespace or a data: prefix. */
 export function b64ToBytes(text) {
-  const m = text.trim().match(/^data:([^;,]*)(?:;[^,]*)?,/);
+  const m = text.trim().match(/^data:([^;,]*)(?:;[^,;]*)*;base64,/i);
+  if (/^data:/i.test(text.trim()) && !m) return null;
   let s = text.trim().slice(m ? m[0].length : 0).replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
-  if (!s || /[^A-Za-z0-9+/=]/.test(s) || s.replace(/=+$/, '').length % 4 === 1) return null;
+  if (!s || !/^[A-Za-z0-9+/]+={0,2}$/.test(s) || s.replace(/=+$/, '').length % 4 === 1) return null;
   s = s.replace(/=+$/, '');
   s += '='.repeat((4 - (s.length % 4)) % 4);
   const bin = atob(s);
@@ -45,22 +47,28 @@ function counts() {
 }
 
 function encode() {
-  $('#b6-bin').replaceChildren();
+  clearPreview();
   const bytes = file ? file.bytes : new TextEncoder().encode(T.value);
   let s = bytes.length ? bytesToB64(bytes) : '';
-  if (s && $('#b6-uri').checked) s = `data:${file ? file.type : 'text/plain;charset=utf-8'};base64,${bytesToB64(bytes)}`;
+  if (s && $('#b6-uri').checked) s = `data:${file ? file.type : 'text/plain;charset=utf-8'};base64,${bytesToB64(bytes, false)}`;
   B.value = s;
   counts();
+}
+
+function clearPreview() {
+  if (previewURL) URL.revokeObjectURL(previewURL);
+  previewURL = null;
+  $('#b6-bin').replaceChildren();
 }
 
 function decode() {
   file = null;
   $('#b6-file').replaceChildren();
   const box = $('#b6-bin');
-  box.replaceChildren();
+  clearPreview();
   if (!B.value.trim()) { T.value = ''; counts(); return; }
   const r = b64ToBytes(B.value);
-  if (!r) { box.append(alertBox(t('invalid'))); counts(); return; }
+  if (!r) { T.value = ''; box.append(alertBox(t('invalid'))); counts(); return; }
   let text = null;
   try { text = new TextDecoder('utf-8', { fatal: true }).decode(r.bytes); } catch { text = null; }
   if (text != null && /[\x00-\x08\x0E-\x1F]/.test(text)) text = null;
@@ -68,8 +76,9 @@ function decode() {
   if (text != null && type === 'application/octet-stream') { T.value = text; counts(); return; }
   if (text != null && type === 'image/svg+xml') T.value = text; else T.value = '';
   const blob = new Blob([r.bytes], { type });
+  if (type.startsWith('image/')) previewURL = URL.createObjectURL(blob);
   box.append(el('div', { class: 'out' },
-    type.startsWith('image/') ? el('div', { class: 'pic' }, el('img', { src: URL.createObjectURL(blob), alt: '' })) : null,
+    previewURL ? el('div', { class: 'pic' }, el('img', { src: previewURL, alt: '' })) : null,
     el('div', { class: 'sizes', text: t('binary', type, fmtBytes(r.bytes.length)) }),
     el('div', {}, el('button', { class: 'btn sm', onclick: () => download(blob, `decoded.${ext}`) }, icon('download'), t('download')))));
   counts();
@@ -81,7 +90,7 @@ $('#b6-url').addEventListener('change', () => { if (T.value || file) encode(); }
 $('#b6-uri').addEventListener('change', () => { if (T.value || file) encode(); });
 $('#b6-copyt').addEventListener('click', (e) => copyText(T.value, e.currentTarget));
 $('#b6-copyb').addEventListener('click', (e) => copyText(B.value, e.currentTarget));
-$('#b6-clear').addEventListener('click', () => { T.value = B.value = ''; file = null; $('#b6-file').replaceChildren(); $('#b6-bin').replaceChildren(); counts(); T.focus(); });
+$('#b6-clear').addEventListener('click', () => { T.value = B.value = ''; file = null; $('#b6-file').replaceChildren(); clearPreview(); counts(); T.focus(); });
 
 async function takeFile(f) {
   file = { bytes: new Uint8Array(await f.arrayBuffer()), name: f.name, type: f.type || 'application/octet-stream' };

@@ -9,6 +9,7 @@ import { COMMON } from '../src/common-strings.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ASSETS = path.join(ROOT, 'src', 'assets');
 const OG = path.join(ASSETS, 'og');
+const missingOnly = process.argv.includes('--missing');
 fs.mkdirSync(OG, { recursive: true });
 const svg64 = (file) => `data:image/svg+xml;base64,${fs.readFileSync(file).toString('base64')}`;
 const appIcon = svg64(path.join(ASSETS, 'icon.svg'));
@@ -21,7 +22,7 @@ const browser = await puppeteer.launch();
 const page = await browser.newPage();
 await page.setViewport({ width: 180, height: 180 });
 await page.setContent(`<body style="margin:0"><img src="${appIcon}" width="180" height="180"></body>`);
-await page.screenshot({ path: path.join(ASSETS, 'icon-180.png'), omitBackground: true });
+if (!missingOnly || !fs.existsSync(path.join(ASSETS, 'icon-180.png'))) await page.screenshot({ path: path.join(ASSETS, 'icon-180.png'), omitBackground: true });
 
 await page.setViewport({ width: 1200, height: 630 });
 const card = (lang, title, line, color, iconSvg) => `<body style="margin:0;width:1200px;height:630px;box-sizing:border-box;padding:70px 84px;display:flex;flex-direction:column;justify-content:space-between;
@@ -36,8 +37,9 @@ const card = (lang, title, line, color, iconSvg) => `<body style="margin:0;width
 </body>`;
 for (const lang of ['en', 'zh']) {
   await page.setContent(card(lang, COMMON[lang].homeH1, COMMON[lang].homeLead.split(/(?<=[.。])/)[0], '#14b8a6', null));
-  await page.screenshot({ path: path.join(OG, `home-${lang}.jpg`), type: 'jpeg', quality: 86 });
+  if (!missingOnly || !fs.existsSync(path.join(OG, `home-${lang}.jpg`))) await page.screenshot({ path: path.join(OG, `home-${lang}.jpg`), type: 'jpeg', quality: 86 });
   for (const t of tools) {
+    if (missingOnly && fs.existsSync(path.join(OG, `${t.id}-${lang}.jpg`))) continue;
     const s = t.strings[lang];
     await page.setContent(card(lang, s.name, s.short, t.color, lucide(t.iconName)));
     await page.screenshot({ path: path.join(OG, `${t.id}-${lang}.jpg`), type: 'jpeg', quality: 86 });

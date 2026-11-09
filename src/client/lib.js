@@ -64,9 +64,12 @@ export function fmtTime(sec, digits = 2) {
 
 /** Parses "1:02.5", "62.5", "00:01:02,500" into seconds; null when invalid. */
 export function parseTime(text) {
-  const parts = String(text).trim().replace(',', '.').split(':');
-  if (!parts.length || parts.length > 3 || parts.some((p) => p === '' || !/^\d+(\.\d+)?$/.test(p))) return null;
-  return parts.map(Number).reduce((acc, n) => acc * 60 + n, 0);
+  const value = String(text).trim().replace(',', '.');
+  if (!/^\d+(?::\d{1,2}){0,2}(?:\.\d+)?$/.test(value)) return null;
+  const parts = value.split(':').map(Number);
+  if (parts.some((part) => !Number.isFinite(part)) || parts.slice(1).some((part) => part >= 60)) return null;
+  const seconds = parts.reduce((total, part) => total * 60 + part, 0);
+  return Number.isFinite(seconds) ? seconds : null;
 }
 
 export const baseName = (name) => name.replace(/\.[^.]+$/, '');
@@ -141,23 +144,38 @@ export function filePicker(root, opts) {
         el('span', { class: 'btn' }, icon('upload'), opts.button || c('chooseFiles')),
         opts.hint ? el('div', { class: 'hint', text: opts.hint }) : null],
     input);
+  let taking = false;
+  const take = async (source) => {
+    if (taking) return;
+    taking = true;
+    zone.setAttribute('aria-busy', 'true');
+    try {
+      const list = typeof source === 'function' ? await source() : source;
+      const files = [...list].filter((file) => accepts(file, opts.accept));
+      if (!files.length) { if (list.length) toast(c('wrongType')); return; }
+      await opts.onFiles(opts.multiple ? files : files.slice(0, 1));
+    } catch (error) {
+      toast(errorText(error), 6000);
+    } finally {
+      taking = false;
+      zone.removeAttribute('aria-busy');
+    }
+  };
   if (opts.sample && !opts.compact) {
     zone.append(el('button', { type: 'button', class: 'sample', text: c('trySample'), onclick: async (e) => {
       e.stopPropagation();
       const b = e.currentTarget;
       b.disabled = true;
       try {
-        const res = await fetch(opts.sample.url);
-        const blob = await res.blob();
-        opts.onFiles([new File([blob], opts.sample.name, { type: opts.sample.type || blob.type })]);
+        await take(async () => {
+          const res = await fetch(opts.sample.url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}: ${opts.sample.name}`);
+          const blob = await res.blob();
+          return [new File([blob], opts.sample.name, { type: opts.sample.type || blob.type })];
+        });
       } finally { b.disabled = false; }
     } }));
   }
-  const take = (list) => {
-    const files = [...list].filter((f) => accepts(f, opts.accept));
-    if (!files.length) { if (list.length) toast(c('wrongType')); return; }
-    opts.onFiles(opts.multiple ? files : files.slice(0, 1));
-  };
   zone.addEventListener('click', (e) => { if (e.target === input || e.target.closest('.sample')) return; input.click(); });
   zone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
   input.addEventListener('change', () => { take(input.files); input.value = ''; });

@@ -42,8 +42,8 @@ export async function openForEdit(bytes) {
 
 export function closeDoc(doc) {
   if (!doc) return;
-  if (typeof doc.destroy === 'function') doc.destroy();
-  else doc.loadingTask?.destroy?.();
+  const pending = typeof doc.destroy === 'function' ? doc.destroy() : doc.loadingTask?.destroy?.();
+  pending?.catch?.(() => {});
 }
 
 /** Renders one page into a canvas whose longest side is about `size` CSS pixels. */
@@ -70,7 +70,7 @@ export const pdfBlob = (bytes) => new Blob([bytes], { type: 'application/pdf' })
 /** "1-3, 5, 8-" → [[1,2,3],[5],[8..n]]; throws PdfError(part) on invalid input. */
 export function parseRanges(text, pageCount) {
   const groups = [];
-  for (const part of text.split(/[,，;；\s]+/).filter(Boolean)) {
+  for (const part of text.trim().replace(/\s*([-–~～])\s*/g, '$1').split(/[,，;；\s]+/).filter(Boolean)) {
     const m = part.match(/^(\d*)\s*[-–~～]\s*(\d*)$/) || part.match(/^(\d+)$/);
     if (!m) throw new PdfError(part);
     let a, b;

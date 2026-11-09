@@ -91,26 +91,35 @@ export async function pickVideoCodec(container, width, height) {
  * opts: { container, video?: ConversionVideoOptions | { discard: true }, audio?: ConversionAudioOptions, trim?, onProgress(p), signal }
  */
 export async function convert(file, { container, video, audio, trim, onProgress, signal }) {
+  signal?.throwIfAborted();
   if (container === 'mp3' || audio?.codec === 'mp3') await ensureMp3Encoder();
+  signal?.throwIfAborted();
   const input = new Input({ source: new BlobSource(file), formats: ALL_FORMATS });
   const output = new Output({ format: FORMATS[container](), target: new BufferTarget() });
-  const conversion = await Conversion.init({ input, output, video, audio, trim, tracks: 'primary' });
-  if (!conversion.isValid) {
-    const reasons = conversion.discardedTracks.map((d) => `${d.track.type}: ${d.reason}`).join(', ');
-    throw new Error(reasons || 'This file cannot be converted in this browser.');
-  }
-  if (onProgress) conversion.onProgress = (p) => onProgress(p);
-  const abort = () => conversion.cancel();
-  signal?.addEventListener('abort', abort, { once: true });
+  let conversion;
+  const abort = () => { conversion?.cancel().catch(() => {}); };
   try {
+    conversion = await Conversion.init({ input, output, video, audio, trim, tracks: 'primary' });
+    signal?.throwIfAborted();
+    if (!conversion.isValid) {
+      const reasons = conversion.discardedTracks.map((track) => `${track.track.type}: ${track.reason}`).join(', ');
+      throw new Error(reasons || 'This file cannot be converted in this browser.');
+    }
+    if (onProgress) conversion.onProgress = onProgress;
+    signal?.addEventListener('abort', abort, { once: true });
     await conversion.execute();
+    signal?.throwIfAborted();
+    return {
+      blob: new Blob([output.target.buffer], { type: MIME[container] }),
+      discarded: conversion.discardedTracks,
+    };
+  } catch (error) {
+    await conversion?.cancel().catch(() => {});
+    throw error;
   } finally {
     signal?.removeEventListener('abort', abort);
+    input.dispose();
   }
-  return {
-    blob: new Blob([output.target.buffer], { type: MIME[container] }),
-    discarded: conversion.discardedTracks,
-  };
 }
 
 /** True when the browser has the WebCodecs APIs the Mediabunny path needs. */

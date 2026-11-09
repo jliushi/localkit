@@ -6,6 +6,7 @@ import { timeline } from './timeline.js';
 import { getFFmpeg, run as ffRun } from './ffmpeg-common.js';
 
 let job = null, tl = null, abort = null, runId = 0, debounce = 0;
+let resultURL = null;
 
 const pick = filePicker($('#va-pick'), {
   accept: MEDIA_ACCEPT, iconName: 'music', title: t('drop'), hint: t('dropHint'), sample: SAMPLE_VIDEO(LK.base), onFiles: ([f]) => load(f),
@@ -15,12 +16,18 @@ const fmt = () => $$('input[name="va-fmt"]').find((r) => r.checked).value;
 const bitrate = () => Number($$('input[name="va-q"]').find((r) => r.checked).value);
 
 async function load(file) {
+  runId++;
+  clearTimeout(debounce);
   abort?.abort();
+  if (job) { URL.revokeObjectURL(job.url); job.media?.input.dispose(); }
+  job = null;
   tl?.destroy();
   tl = null;
   $('#va-pick').hidden = true;
   $('#va-work').hidden = false;
   $('#va-result').replaceChildren();
+  if (resultURL) URL.revokeObjectURL(resultURL);
+  resultURL = null;
   $('#va-alert').replaceChildren();
   $('#va-part').checked = false;
   $('#va-range').hidden = true;
@@ -34,7 +41,7 @@ async function load(file) {
   $('#va-file').replaceChildren(fileCard({ file, meta: metaLine(job.info), thumb: await thumbnail(job), onChange: () => pick.open() }));
   if (job.media && !job.media.audio) { $('#va-alert').replaceChildren(alertBox(t('noAudio'))); return; }
   if (job.legacy) $('#va-alert').replaceChildren(alertBox(t('legacy'), 'info'));
-  run();
+  await run();
 }
 
 function showRange() {
@@ -71,7 +78,7 @@ async function run() {
       const codec = { mp3: ['-c:a', 'libmp3lame', '-b:a', String(bitrate())], m4a: ['-c:a', 'aac', '-b:a', '192k'], wav: ['-c:a', 'pcm_s16le'] }[container];
       const cut = range ? ['-ss', range.start.toFixed(3), '-t', (range.end - range.start).toFixed(3)] : [];
       blob = await ffRun(job.file, [...cut, '-i', '{in}', '-vn', '-map', '0:a:0', ...codec], `out.${container}`, { mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav' }[container],
-        { duration: range ? range.end - range.start : job.info.duration, onProgress: (x) => task.set(x) });
+        { duration: range ? range.end - range.start : job.info.duration, onProgress: (x) => task.set(x), signal });
     } else {
       const audio = container === 'mp3' ? { codec: 'mp3', quality: new Quality({ bitrate: bitrate() }) }
         : container === 'wav' ? { codec: 'pcm-s16' }
@@ -82,11 +89,14 @@ async function run() {
       }));
     }
     if (id !== runId) return;
+    signal.throwIfAborted();
     task.close();
+    if (resultURL) URL.revokeObjectURL(resultURL);
+    resultURL = URL.createObjectURL(blob);
     const len = range ? range.end - range.start : job.info.duration;
     $('#va-result').replaceChildren(el('div', { class: 'result' },
       el('div', { class: 'result-head' }, icon('circleCheck'), t('ready', container.toUpperCase(), fmtDuration(len), fmtBytes(blob.size))),
-      el('audio', { src: URL.createObjectURL(blob), controls: true }),
+      el('audio', { src: resultURL, controls: true }),
       el('div', { class: 'actions' },
         el('button', { class: 'btn lg', onclick: () => download(blob, name) }, icon('download'), t('download', container.toUpperCase())),
         el('button', { class: 'btn ghost', onclick: () => pick.open() }, t('another')))));

@@ -9,7 +9,10 @@
     "serve": "node build/serve.mjs",
     "test": "node test/e2e.mjs",
     "test:site": "node test/site.mjs",
-    "test:pages": "node test/pages.mjs"
+    "test:pages": "node test/pages.mjs",
+    "test:release": "node test/run.mjs",
+    "test:ai": "node test/run.mjs --ai",
+    "test:regressions": "node test/regressions.mjs"
   },
   "license": "MIT",
   "dependencies": {

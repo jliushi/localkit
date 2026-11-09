@@ -9,7 +9,7 @@ const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'd
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.xml': 'application/xml', '.txt': 'text/plain', '.mjs': 'text/javascript', '.wasm': 'application/wasm' };
 const port = Number(process.argv[2] || 8080);
 
-http.createServer((req, res) => {
+const server = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (!p.startsWith(BASE_PATH)) { res.writeHead(302, { Location: `${BASE_PATH}/` }); return res.end(); }
   p = p.slice(BASE_PATH.length) || '/';
@@ -25,4 +25,4 @@ http.createServer((req, res) => {
   }
   res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
   fs.createReadStream(file).pipe(res);
-}).listen(port, () => console.log(`http://localhost:${port}${BASE_PATH}/`));
+}).listen(port, () => console.log(`http://localhost:${server.address().port}${BASE_PATH}/`));

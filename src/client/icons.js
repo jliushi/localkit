@@ -26,6 +26,10 @@ import arrowRight from 'lucide-static/icons/arrow-right.svg';
 import merge from 'lucide-static/icons/merge.svg';
 import split from 'lucide-static/icons/split.svg';
 import camera from 'lucide-static/icons/camera.svg';
+import flipH from 'lucide-static/icons/flip-horizontal.svg';
+import flipV from 'lucide-static/icons/flip-vertical.svg';
+import volumeX from 'lucide-static/icons/volume-x.svg';
+import volume from 'lucide-static/icons/volume-2.svg';
 import crop from 'lucide-static/icons/crop.svg';
 import sparkles from 'lucide-static/icons/sparkles.svg';
 import fileImage from 'lucide-static/icons/file-image.svg';
@@ -38,7 +42,7 @@ import undo from 'lucide-static/icons/undo-2.svg';
 import filePlus from 'lucide-static/icons/file-plus.svg';
 import squareDashed from 'lucide-static/icons/square-dashed.svg';
 
-const ICONS = { undo, filePlus, squareDashed, upload, download, fileVideo, fileAudio, fileText, image, images, circleCheck, circleAlert, x, rotateCw, rotateCcw, trash, grip, play, pause, scissors, refresh, plus, copy, arrowUp, arrowDown, arrowLeft, arrowRight, merge, split, camera, crop, sparkles, fileImage, music, repeat, eye, zap };
+const ICONS = { undo, filePlus, squareDashed, upload, download, fileVideo, fileAudio, fileText, image, images, circleCheck, circleAlert, x, rotateCw, rotateCcw, trash, grip, play, pause, scissors, refresh, plus, copy, arrowUp, arrowDown, arrowLeft, arrowRight, merge, split, camera, crop, sparkles, fileImage, music, repeat, eye, zap, flipH, flipV, volumeX, volume };
 
 /** Returns a decorative <svg> element. */
 export function icon(name, cls = 'ic') {

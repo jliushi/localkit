@@ -733,6 +733,33 @@ dialog h3 { margin-top: 0; }
   .pe-side #pe-pagecount { display: none; }
 }
 
+/* rotate video */
+.rv-box { position: relative; background: #000; border-radius: 10px; overflow: hidden; max-width: 100%; }
+.rv-box video.rv-video { position: absolute; max-width: none; max-height: none; border-radius: 0; object-fit: fill; transition: transform .25s ease; cursor: pointer; }
+.rv-btns { justify-content: center; }
+.rv-btns .btn[aria-pressed="true"] { background: var(--accent-strong); color: #fff !important; }
+
+/* crop video */
+.cr-layer { position: absolute; inset: 0; overflow: hidden; }
+.cr-box { position: absolute; border: 2px solid #fff; cursor: move; touch-action: none;
+  background-image: linear-gradient(rgba(255,255,255,.35) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.35) 1px, transparent 1px);
+  background-size: 33.333% 33.333%; }
+.cr-shade { position: absolute; background: rgba(0, 0, 0, .58); pointer-events: none; }
+.cr-h { position: absolute; width: 14px; height: 14px; background: #14b8a6; border: 2px solid #fff; border-radius: 4px; }
+.cr-h::after { content: ''; position: absolute; inset: -11px; }
+.cr-h.nw { left: -3px; top: -3px; cursor: nwse-resize; } .cr-h.se { right: -3px; bottom: -3px; cursor: nwse-resize; }
+.cr-h.ne { right: -3px; top: -3px; cursor: nesw-resize; } .cr-h.sw { left: -3px; bottom: -3px; cursor: nesw-resize; }
+.cr-h.n { left: calc(50% - 7px); top: -3px; cursor: ns-resize; } .cr-h.s { left: calc(50% - 7px); bottom: -3px; cursor: ns-resize; }
+.cr-h.w { left: -3px; top: calc(50% - 7px); cursor: ew-resize; } .cr-h.e { right: -3px; top: calc(50% - 7px); cursor: ew-resize; }
+.cr-nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.cr-nums input { width: 100%; }
+@media (max-width: 460px) { .cr-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* video speed */
+.vs-slider { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.vs-slider input { flex: 1; min-width: 0; }
+.vs-slider output { min-width: 3.4em; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+
 /* ---- Remove Background */
 .rb-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
 .rb-card .rb-wait { display: grid; place-items: center; align-content: center; gap: 8px; min-height: 140px; border-radius: 8px; background: var(--card, #f4f6f8); color: var(--muted); width: 100%; }

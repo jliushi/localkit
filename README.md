@@ -1,6 +1,6 @@
 # LocalKit 本地工具箱
 
-Free online tools that run entirely in the browser, in English and 中文. Files are never uploaded.
+31 free online tools that run entirely in the browser, in English and 中文. Files are never uploaded.
 
 **Live:** https://jliushi.github.io/localkit/ ([English](https://jliushi.github.io/localkit/en/) · [中文](https://jliushi.github.io/localkit/zh/))
 
@@ -24,21 +24,28 @@ No application server, accounts, cookies or analytics. User files stay on the de
 
 ```sh
 npm ci
+npm run test:release              # self-contained build, static audit, regressions, 68 pages × 2 widths, output checks without external AI downloads
+npm run test:ai                   # also verifies real recognition, cutout and translation models (network required)
 node build/build.mjs              # writes dist/ (bundles with esbuild, copies wasm into dist/vendor)
 node build/serve.mjs 8090         # http://localhost:8090/localkit/
-node test/make-fixtures.mjs       # test images and PDFs (videos are made with ffmpeg; see test/fixtures)
+node test/make-release-fixtures.mjs # generates missing large/video fixtures (ffmpeg required)
 npm test -- --only=merge-pdf --shots   # drives real tools in headless Chrome; server must be running
 npm test                         # full output checks, including model downloads (ffmpeg/ffprobe required)
 npm run test:site                # sitemap, bilingual links, metadata, JSON-LD and local/share assets
 npm run test:pages               # every page, both languages, phone and desktop width
-node scripts/make-images.mjs      # icon-180.png, og-en.png, og-zh.png
+node scripts/make-images.mjs      # icon-180.png and bilingual cards in src/assets/og/
+node scripts/make-images.mjs --missing # generate only missing tool/language share images
 ```
 
 To add a tool, create `src/tools/<id>.mjs` (strings and UI markup for both languages) and `src/client/<id>.js` (browser code), then add the id to `TOOL_ORDER` in `build/build.mjs`.
 
 Set `BASE_URL` to test another preview port or the deployed site. Git Bash users should set `MSYS_NO_PATHCONV=1` when passing URL paths. Generated screenshots and downloads are in `test/out/` and are not committed.
 
-Pushing to `main` installs the locked dependencies, builds, audits the static output, then deploys to GitHub Pages (`.github/workflows/deploy.yml`). The final step notifies IndexNow; submission does not guarantee indexing or traffic. Generate share images when adding or renaming tools so the static audit passes.
+The release runner starts its own preview on an available port and stops it when finished. Use `TEST_PORT` for a fixed port, or `BASE_URL` for an existing server. It generates ignored fixtures but does not regenerate tracked samples or share images. Node.js 22, Chrome (installed by Puppeteer unless `PUPPETEER_EXECUTABLE_PATH` is set), and `ffmpeg`/`ffprobe` on PATH are required.
+
+Pull requests and pushes to `main` run the self-contained release checks. GitHub Pages deploys only after those checks pass (`.github/workflows/deploy.yml`); pull requests never deploy. External AI model downloads have a separate manually triggered acceptance workflow (`.github/workflows/ai-check.yml`). The final deployment step notifies IndexNow; submission does not guarantee indexing or traffic. Generate share images when adding or renaming tools so the static audit passes. The build rejects missing or duplicate tool definitions instead of silently omitting tools.
+
+Latest local acceptance notes and publication status: [2026-11-10 release check](docs/release-2026-11-10.md).
 
 ## License
 
