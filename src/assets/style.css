@@ -168,6 +168,7 @@ input[type=color] { width: 44px; height: 36px; padding: 2px; border: 1px solid v
 .prose h3 { color: var(--text); margin-top: 1.5em; font-size: 1.12rem; }
 .prose ul { padding-left: 1.2em; }
 .prose li { margin: .3em 0; }
+.prose .guide-table { overflow-x: auto; }
 .prose table { border-collapse: collapse; width: 100%; font-size: .93rem; margin: .6em 0 1em; background: var(--card); }
 .prose th, .prose td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; vertical-align: top; }
 .prose th { background: var(--bg-2); color: var(--text); }

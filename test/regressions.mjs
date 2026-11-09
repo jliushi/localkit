@@ -246,5 +246,21 @@ try {
     await page.waitForSelector('#cm-grid .actions');
     assert.equal(await page.$$eval('#cm-grid .failed', (nodes) => nodes.length), 0);
   });
+  await check('wide guide tables stay inside the mobile viewport and remain keyboard scrollable', async (page) => {
+    await page.setViewport({ width: 390, height: 844 });
+    await page.goto(`${base}/en/ai-subtitle-generator/`, { waitUntil: 'networkidle0' });
+    await page.addStyleTag({ content: ':root { --font: Verdana, sans-serif; }' });
+    await page.$eval('.guide-table td', (cell) => { cell.textContent = 'LongUnbrokenModelName'.repeat(5); });
+    for (const width of [390, 320]) {
+      await page.setViewport({ width, height: 844 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    }
+    const scrollable = await page.$eval('.guide-table', (region) => {
+      region.focus();
+      region.scrollLeft = 100;
+      return document.activeElement === region && region.scrollLeft > 0;
+    });
+    assert.ok(scrollable, 'wide table can be focused and scrolled without clipping content');
+  });
   console.log(`${passed} behavioral regressions passed`);
 } finally { await browser.close(); }

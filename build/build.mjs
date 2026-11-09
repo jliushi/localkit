@@ -75,7 +75,7 @@ function guide(blocks) {
     return '';
   });
 }
-const table = ([head, ...rows]) => html`<table><thead><tr>${head.map((h) => html`<th>${h}</th>`)}</tr></thead><tbody>${rows.map((r) => html`<tr>${r.map((d) => html`<td>${d}</td>`)}</tr>`)}</tbody></table>`;
+const table = ([head, ...rows]) => html`<div class="guide-table" tabindex="0"><table><thead><tr>${head.map((h) => html`<th>${h}</th>`)}</tr></thead><tbody>${rows.map((r) => html`<tr>${r.map((d) => html`<td>${d}</td>`)}</tr>`)}</tbody></table></div>`;
 
 function toolPage(tool, lang, tools, v) {
   const s = tool.strings[lang];
