@@ -7,7 +7,7 @@ import puppeteer from 'puppeteer';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const base = process.env.BASE_URL || 'http://localhost:8090/localkit';
 const helpers = await build({
-  stdin: { contents: 'export { parseTime, filePicker } from "./src/client/lib.js"; export { parseRanges, closeDoc } from "./src/client/pdf-common.js"; export { probeMedia } from "./src/client/ffmpeg-common.js"; export { normalizeDoc, blankDoc, createStore } from "./src/client/resume-data.js";', resolveDir: root },
+  stdin: { contents: 'export { parseTime, filePicker } from "./src/client/lib.js"; export { parseRanges, closeDoc } from "./src/client/pdf-common.js"; export { probeMedia } from "./src/client/ffmpeg-common.js"; export { normalizeDoc, blankDoc, createStore } from "./src/client/resume-data.js"; export { convert as convertMedia } from "./src/client/media.js"; export { Conversion, Input } from "mediabunny";', resolveDir: root },
   bundle: true, format: 'iife', globalName: 'LKValidation', write: false, loader: { '.svg': 'text' },
 });
 const browser = await puppeteer.launch();
@@ -261,6 +261,36 @@ try {
       return document.activeElement === region && region.scrollLeft > 0;
     });
     assert.ok(scrollable, 'wide table can be focused and scrolled without clipping content');
+  });
+  await check('media cancellation waits for encoder cleanup before disposing its input', async (page) => {
+    await page.addScriptTag({ content: helpers.outputFiles[0].text });
+    const state = await page.evaluate(async () => {
+      const { Conversion, Input, convertMedia } = window.LKValidation;
+      let disposed = 0, calls = 0, failExecution, releaseCancellation;
+      const execution = new Promise((resolve, reject) => { failExecution = reject; });
+      const cleanup = new Promise((resolve) => { releaseCancellation = resolve; });
+      const originalDispose = Input.prototype.dispose;
+      Input.prototype.dispose = function () { disposed++; originalDispose.call(this); };
+      Conversion.init = async () => ({
+        isValid: true, discardedTracks: [], execute: () => execution,
+        cancel() {
+          calls++;
+          if (calls > 1) return Promise.resolve();
+          failExecution(new DOMException('Canceled', 'AbortError'));
+          return cleanup;
+        },
+      });
+      const controller = new AbortController();
+      const result = convertMedia(new File(['test'], 'test.mp4'), { container: 'm4a', signal: controller.signal }).catch((error) => error.name);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      controller.abort();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const beforeCleanup = disposed;
+      releaseCancellation();
+      const error = await result;
+      return { beforeCleanup, disposed, calls, error };
+    });
+    assert.deepEqual(state, { beforeCleanup: 0, disposed: 1, calls: 1, error: 'AbortError' });
   });
   console.log(`${passed} behavioral regressions passed`);
 } finally { await browser.close(); }

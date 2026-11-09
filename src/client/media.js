@@ -97,7 +97,12 @@ export async function convert(file, { container, video, audio, trim, onProgress,
   const input = new Input({ source: new BlobSource(file), formats: ALL_FORMATS });
   const output = new Output({ format: FORMATS[container](), target: new BufferTarget() });
   let conversion;
-  const abort = () => { conversion?.cancel().catch(() => {}); };
+  let cancellation;
+  const cancel = () => {
+    if (conversion) cancellation ||= conversion.cancel();
+    return cancellation;
+  };
+  const abort = () => { cancel()?.catch(() => {}); };
   try {
     conversion = await Conversion.init({ input, output, video, audio, trim, tracks: 'primary' });
     signal?.throwIfAborted();
@@ -114,10 +119,11 @@ export async function convert(file, { container, video, audio, trim, onProgress,
       discarded: conversion.discardedTracks,
     };
   } catch (error) {
-    await conversion?.cancel().catch(() => {});
+    await cancel()?.catch(() => {});
     throw error;
   } finally {
     signal?.removeEventListener('abort', abort);
+    await cancellation?.catch(() => {});
     input.dispose();
   }
 }

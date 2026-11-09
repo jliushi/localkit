@@ -34,6 +34,21 @@ async function open(p, lang = 'en', width = 1280) {
   page.errors = [];
   page.on('pageerror', (e) => page.errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource.*(favicon|404)/.test(m.text())) page.errors.push(m.text()); });
+  if (process.env.LK_TRACE_SAMPLES) await page.evaluateOnNewDocument((captureStacks) => {
+    const NativeRegistry = window.FinalizationRegistry;
+    window.FinalizationRegistry = class extends NativeRegistry {
+      constructor(callback) {
+        super((value) => {
+          if (value?.type === 'audio') console.error('Unclosed audio sample metadata', JSON.stringify({ timestamp: value.data?.timestamp, frames: value.data?.numberOfFrames, format: value.data?.format }));
+          if (value?.allocationTrace) console.error(value.allocationTrace.replaceAll('\n', ' <- '));
+          callback(value);
+        });
+      }
+      register(target, value, token) {
+        return super.register(target, captureStacks && value?.type === 'audio' ? { ...value, allocationTrace: new Error('Unclosed audio sample allocation').stack } : value, token);
+      }
+    };
+  }, process.env.LK_TRACE_SAMPLES === '1');
   await page.setViewport({ width, height: 900 });
   const client = await page.createCDPSession();
   // Save by GUID and wait for Chrome's completion event. A stale file with the suggested name
@@ -754,11 +769,24 @@ await test('video-to-mp3:auto+m4a+range', async () => {
   await clickSettled(page, '#va-result .btn.lg');
   const n2 = await waitDownload(page, 2);
   assert(probe(n2).streams[0].codec_name === 'aac', 'aac');
+  const audioHashes = (file) => JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-select_streams', 'a:0', '-show_packets', '-show_data_hash', 'sha256', '-show_entries', 'packet=data_hash', '-of', 'json', file]).toString()).packets.map((packet) => packet.data_hash);
+  assert(JSON.stringify(audioHashes(fixture('phone-1080p.mp4'))) === JSON.stringify(audioHashes(outFile(n2))), 'M4A keeps every original AAC packet unchanged');
   await page.click('input[name="va-fmt"][value="mp3"] + span');
   await page.click('#va-part');
   await page.waitForSelector('.tl-track');
   await page.$eval('.tl-time input', (i) => { i.value = '00:20'; i.dispatchEvent(new Event('change')); });
   await waitText(page, '#va-result', /0:10/);
+  await clickSettled(page, '#va-result .btn.lg');
+  const trimmed = await waitDownload(page, 3);
+  assert(Math.abs(Number(probe(trimmed).format.duration) - 10) < 0.12, 'trimmed MP3 duration');
+  await page.click('input[name="va-fmt"][value="wav"] + span');
+  await waitText(page, '#va-result', /WAV/);
+  await clickSettled(page, '#va-result .btn.lg');
+  const wave = probe(await waitDownload(page, 4));
+  assert(wave.streams[0].codec_name === 'pcm_s16le' && Math.abs(Number(wave.format.duration) - 10) < 0.05, 'trimmed WAV output');
+  await page.waitForFunction(() => !document.querySelector('#va-task .task'));
+  await (await page.createCDPSession()).send('HeapProfiler.collectGarbage');
+  await sleep(300);
   return page;
 });
 

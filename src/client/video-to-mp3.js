@@ -1,12 +1,11 @@
 import { $, $$, t, c, el, LK, icon, filePicker, fileCard, progress, alertBox, errorText, download, fmtBytes, fmtDuration, baseName } from './lib.js';
-import { convert, ConversionCanceledError } from './media.js';
-import { Quality } from 'mediabunny';
 import { prepare, metaLine, thumbnail, MEDIA_ACCEPT, SAMPLE_VIDEO, playerFor } from './video-ui.js';
 import { timeline } from './timeline.js';
 import { getFFmpeg, run as ffRun } from './ffmpeg-common.js';
 
 let job = null, tl = null, abort = null, runId = 0, debounce = 0;
 let resultURL = null;
+let activeRun = Promise.resolve();
 
 const pick = filePicker($('#va-pick'), {
   accept: MEDIA_ACCEPT, iconName: 'music', title: t('drop'), hint: t('dropHint'), sample: SAMPLE_VIDEO(LK.base), onFiles: ([f]) => load(f),
@@ -60,37 +59,36 @@ async function run() {
   if (!job) return;
   const id = ++runId;
   abort?.abort();
-  abort = new AbortController();
-  const signal = abort.signal;
+  const controller = new AbortController();
+  abort = controller;
+  const signal = controller.signal;
   const container = fmt();
   $('#va-q-wrap').hidden = container !== 'mp3';
   const range = $('#va-part').checked && tl ? tl.get() : null;
   const name = `${baseName(job.file.name)}.${container}`;
   $('#va-result').replaceChildren();
-  const task = progress($('#va-task'), { title: t('converting'), onCancel: () => abort.abort() });
+  const task = progress($('#va-task'), { title: t('converting'), onCancel: () => controller.abort() });
+  const previousRun = activeRun;
+  let finishRun;
+  activeRun = new Promise((resolve) => { finishRun = resolve; });
   try {
-    let blob;
-    if (job.legacy) {
-      task.title(c('loadingEngine'));
-      await getFFmpeg();
-      if (id !== runId) return;
-      task.title(t('converting'));
-      const codec = { mp3: ['-c:a', 'libmp3lame', '-b:a', String(bitrate())], m4a: ['-c:a', 'aac', '-b:a', '192k'], wav: ['-c:a', 'pcm_s16le'] }[container];
-      const cut = range ? ['-ss', range.start.toFixed(3), '-t', (range.end - range.start).toFixed(3)] : [];
-      blob = await ffRun(job.file, [...cut, '-i', '{in}', '-vn', '-map', '0:a:0', ...codec], `out.${container}`, { mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav' }[container],
-        { duration: range ? range.end - range.start : job.info.duration, onProgress: (x) => task.set(x), signal });
-    } else {
-      const audio = container === 'mp3' ? { codec: 'mp3', quality: new Quality({ bitrate: bitrate() }) }
-        : container === 'wav' ? { codec: 'pcm-s16' }
-          : { codec: 'aac' }; // copies the original AAC track untouched when the source has one
-      ({ blob } = await convert(job.file, {
-        container, video: { discard: true }, audio, trim: range ? { start: range.start, end: range.end } : undefined,
-        onProgress: (x) => task.set(x), signal,
-      }));
-    }
+    await previousRun;
     if (id !== runId) return;
     signal.throwIfAborted();
-    task.close();
+    task.title(c('loadingEngine'));
+    await getFFmpeg({ signal });
+    if (id !== runId) return;
+    task.title(t('converting'));
+    const codec = {
+      mp3: ['-c:a', 'libmp3lame', '-b:a', String(bitrate())],
+      m4a: job.info.audioCodec === 'aac' ? ['-c:a', 'copy'] : ['-c:a', 'aac', '-b:a', '192k'],
+      wav: ['-c:a', 'pcm_s16le'],
+    }[container];
+    const cut = range ? ['-ss', range.start.toFixed(3), '-t', (range.end - range.start).toFixed(3)] : [];
+    const blob = await ffRun(job.file, [...cut, '-i', '{in}', '-vn', '-map', '0:a:0', ...codec], `out.${container}`, { mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav' }[container],
+      { duration: range ? range.end - range.start : job.info.duration, onProgress: (value) => task.set(value), signal });
+    if (id !== runId) return;
+    signal.throwIfAborted();
     if (resultURL) URL.revokeObjectURL(resultURL);
     resultURL = URL.createObjectURL(blob);
     const len = range ? range.end - range.start : job.info.duration;
@@ -102,9 +100,11 @@ async function run() {
         el('button', { class: 'btn ghost', onclick: () => pick.open() }, t('another')))));
   } catch (e) {
     if (id !== runId) return;
-    task.close();
-    if (e instanceof ConversionCanceledError || signal.aborted) $('#va-alert').replaceChildren(alertBox(c('canceled'), 'info'));
+    if (signal.aborted) $('#va-alert').replaceChildren(alertBox(c('canceled'), 'info'));
     else $('#va-alert').replaceChildren(alertBox(/no streams|does not contain|discarded|audio: /i.test(e.message) ? t('noAudio') : errorText(e)));
+  } finally {
+    task.close();
+    finishRun();
   }
 }
 

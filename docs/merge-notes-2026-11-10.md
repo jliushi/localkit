@@ -19,3 +19,11 @@ The remote patch targets the original UI and old filenames. Those entry points h
 | Honest device/memory limits in homepage copy | Retained alongside the redesigned tool catalog in both languages. |
 
 Regression checks are adapted to the new UI rather than retaining obsolete selectors. The release runner exercises static assets, 68 pages at two widths, malformed/replaced files, real exported media and PDFs, resume draft safety, plus optionally real external AI models. Production acceptance is recorded separately in the supervisor report after deployment.
+
+## Release-gate follow-ups
+
+The Linux gate caught a font-dependent overflow in the subtitle guide table. Guide tables now have keyboard-focusable local scrolling, with a 320/390-pixel regression instead of hiding overflow on the page.
+
+Forced garbage collection reproduced an audio-sample cleanup race during automatic format/range changes. Audio extraction now uses the existing, locally hosted ffmpeg worker for deterministic termination and serialized restarts. AAC-to-M4A still copies the original packets; MP3/WAV range exports are checked by ffprobe, and AAC packet hashes must match the input. Other tools retain their existing media implementation and dependency versions; a trial dependency upgrade did not resolve the issue and was not retained.
+
+Shared native-media cancellation also waits for its original cleanup promise before disposing the input. A deterministic regression checks this ordering. `LK_TRACE_SAMPLES=brief` enables leaked-sample metadata during browser tests; `LK_TRACE_SAMPLES=1` additionally records allocation stacks. These diagnostics never run in the published application.
